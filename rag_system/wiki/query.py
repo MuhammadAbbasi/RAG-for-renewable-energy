@@ -1,5 +1,5 @@
 """
-query.py — NL2SQL query engine for the wiki knowledge base.
+query.py - NL2SQL query engine for the wiki knowledge base.
 
 How it works
 ------------
@@ -42,8 +42,8 @@ Colonne:
   power_dc_mw     REAL    -- potenza DC/installata in MW (NULL se non distinta)
   area_ha         REAL    -- superficie in ettari
   region          TEXT    -- regione (es. "Sicilia")
-  municipalities  TEXT    -- JSON array (es. '["Ramacca","Caltagirone"]') — usa LIKE per ricercare
-  provinces       TEXT    -- JSON array (es. '["CT","CL"]') — usa LIKE per ricercare
+  municipalities  TEXT    -- JSON array (es. '["Ramacca","Caltagirone"]') - usa LIKE per ricercare
+  provinces       TEXT    -- JSON array (es. '["CT","CL"]') - usa LIKE per ricercare
   proponent       TEXT    -- committente/società proponente
   designer        TEXT    -- progettista/società di ingegneria
   procedure       TEXT    -- VIA | PAUR | Verifica assoggettabilità a VIA | AIA | Autorizzazione Unica
@@ -57,7 +57,7 @@ Colonne:
   last_updated    TEXT    -- timestamp ultimo aggiornamento
 
 Note importanti:
-- municipalities e provinces sono stringhe JSON — usa: municipalities LIKE '%Ramacca%'
+- municipalities e provinces sono stringhe JSON - usa: municipalities LIKE '%Ramacca%'
 - power_mw può essere NULL per i progetti non ancora estratti
 - Per sommare o confrontare MW usa: WHERE power_mw IS NOT NULL
 """
@@ -70,7 +70,7 @@ genera UNA SOLA query SELECT SQLite valida che risponda alla domanda.
 REGOLE:
 - Genera SOLO la query SQL, senza spiegazioni, senza markdown, senza ```
 - Usa solo la tabella 'projects'
-- Solo query SELECT — nessun INSERT/UPDATE/DELETE/DROP
+- Solo query SELECT - nessun INSERT/UPDATE/DELETE/DROP
 - Per confronti su potenza usa: CAST(power_mw AS REAL)
 - Per ricerche in array JSON usa LIKE '%valore%'
 - Ordina i risultati in modo sensato (ORDER BY power_mw DESC per domande su potenza)
@@ -196,7 +196,7 @@ def wiki_query(question: str) -> dict:
             "error":  "sql_forbidden",
         }
     except Exception as exc:
-        logger.error("Wiki SQL execution error: %s — SQL: %s", exc, sql)
+        logger.error("Wiki SQL execution error: %s - SQL: %s", exc, sql)
         return {
             "answer": f"Errore nell'esecuzione della query: {exc}",
             "sql":    sql,

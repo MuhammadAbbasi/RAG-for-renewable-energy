@@ -1,5 +1,5 @@
 """
-table_extractor.py — Structured table extraction from PDFs using pdfplumber.
+table_extractor.py - Structured table extraction from PDFs using pdfplumber.
 
 Tables are converted to Markdown format so they can be stored as regular
 text chunks in the vector database and queried naturally.
@@ -109,6 +109,6 @@ def tables_to_text(tables: list[str], page_number: int, filename: str) -> str:
     """
     parts = []
     for i, tbl in enumerate(tables, start=1):
-        header = f"[Tabella {i} — Pagina {page_number} — {filename}]"
+        header = f"[Tabella {i} - Pagina {page_number} - {filename}]"
         parts.append(f"{header}\n{tbl}")
     return "\n\n".join(parts)

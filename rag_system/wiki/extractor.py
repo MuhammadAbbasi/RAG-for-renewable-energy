@@ -1,5 +1,5 @@
 """
-extractor.py — LLM-based structured extraction from PDF documents.
+extractor.py - LLM-based structured extraction from PDF documents.
 
 Strategy
 --------
@@ -43,24 +43,24 @@ Rispondi SOLO con un oggetto JSON valido. Non aggiungere testo prima o dopo il J
 
 Estrai questi campi (usa null se non trovato):
 {
-  "project_name": "string — nome dell'impianto o del progetto (es. VILLALBA, MARGHERITO)",
-  "type": "string — fotovoltaico | agrovoltaico | eolico | idroelettrico | accumulo | rete | altro",
-  "power_mw": number — potenza nominale AC in MW (converti kW/1000, ignora potenza DC se diversa),
-  "power_dc_mw": number — potenza DC o installata in MW se esplicitamente distinta,
-  "area_ha": number — superficie totale area di progetto in ettari,
-  "municipalities": ["string"] — lista dei comuni interessati,
-  "provinces": ["string"] — sigle province (es. CT, CL, RG),
-  "region": "string — regione (es. Sicilia)",
-  "proponent": "string — nome del committente/proponente/società richiedente",
-  "designer": "string — nome del progettista/società di ingegneria",
-  "procedure": "string — tipo procedura: VIA | PAUR | Verifica assoggettabilità a VIA | AIA | Autorizzazione Unica | altro",
-  "procedure_refs": "string — riferimenti normativi citati (es. art. 19 D.Lgs. 152/2006)",
-  "status": "string — approvato | in corso VIA | in corso autorizzazione | proposta | ottemperanza | altro",
-  "approval_date": "string — data parere/decreto in formato YYYY-MM-DD, null se non presente",
-  "approval_ref": "string — riferimento parere o decreto (es. parere n. 255 del 25/01/2024)",
-  "grid_connection": "string — tipo connessione rete (es. RTN 150kV, AT 36kV, MT 20kV)",
-  "doc_type": "string — SPA | SIA | VIA | SNT | PMA | RT | VINCA | MASE | altro",
-  "summary": "string — descrizione del progetto in 2-3 frasi (tipo, potenza, luogo, proponente)"
+  "project_name": "string - nome dell'impianto o del progetto (es. VILLALBA, MARGHERITO)",
+  "type": "string - fotovoltaico | agrovoltaico | eolico | idroelettrico | accumulo | rete | altro",
+  "power_mw": number - potenza nominale AC in MW (converti kW/1000, ignora potenza DC se diversa),
+  "power_dc_mw": number - potenza DC o installata in MW se esplicitamente distinta,
+  "area_ha": number - superficie totale area di progetto in ettari,
+  "municipalities": ["string"] - lista dei comuni interessati,
+  "provinces": ["string"] - sigle province (es. CT, CL, RG),
+  "region": "string - regione (es. Sicilia)",
+  "proponent": "string - nome del committente/proponente/società richiedente",
+  "designer": "string - nome del progettista/società di ingegneria",
+  "procedure": "string - tipo procedura: VIA | PAUR | Verifica assoggettabilità a VIA | AIA | Autorizzazione Unica | altro",
+  "procedure_refs": "string - riferimenti normativi citati (es. art. 19 D.Lgs. 152/2006)",
+  "status": "string - approvato | in corso VIA | in corso autorizzazione | proposta | ottemperanza | altro",
+  "approval_date": "string - data parere/decreto in formato YYYY-MM-DD, null se non presente",
+  "approval_ref": "string - riferimento parere o decreto (es. parere n. 255 del 25/01/2024)",
+  "grid_connection": "string - tipo connessione rete (es. RTN 150kV, AT 36kV, MT 20kV)",
+  "doc_type": "string - SPA | SIA | VIA | SNT | PMA | RT | VINCA | MASE | altro",
+  "summary": "string - descrizione del progetto in 2-3 frasi (tipo, potenza, luogo, proponente)"
 }"""
 
 _EXTRACT_USER = """Documento: {filename}
@@ -86,7 +86,7 @@ def _extract_pages_text(pdf_path: Path, max_pages: int) -> str:
     try:
         import pdfplumber
     except ImportError:
-        logger.warning("pdfplumber not available — wiki extraction skipped for %s", pdf_path.name)
+        logger.warning("pdfplumber not available - wiki extraction skipped for %s", pdf_path.name)
         return ""
 
     text_parts = []
@@ -108,7 +108,7 @@ def _extract_pages_text(pdf_path: Path, max_pages: int) -> str:
                         text_parts.append(header + page_text)
                         total_chars += len(page_text)
                         if i < max_pages and total_chars >= 800:
-                            # Have enough from first N pages — only continue for sparse docs
+                            # Have enough from first N pages - only continue for sparse docs
                             pass
                 except Exception as exc:
                     logger.debug("Page %d extraction error in %s: %s", i+1, pdf_path.name, exc)
@@ -131,7 +131,7 @@ def _call_llm_extract(filename: str, project_id: str, text: str) -> Optional[dic
     Returns parsed dict or None on failure.
     """
     if not text or len(text.strip()) < 100:
-        logger.debug("Insufficient text for wiki extraction of %s — skipping LLM call", filename)
+        logger.debug("Insufficient text for wiki extraction of %s - skipping LLM call", filename)
         return None
 
     model   = config.WIKI_EXTRACT_MODEL
@@ -154,7 +154,7 @@ def _call_llm_extract(filename: str, project_id: str, text: str) -> Optional[dic
         },
     }
 
-    # Disable thinking for extraction — we want deterministic JSON, not reasoning
+    # Disable thinking for extraction - we want deterministic JSON, not reasoning
     if "qwen3" in model.lower():
         payload["options"]["think"] = False
 
@@ -181,7 +181,7 @@ def _call_llm_extract(filename: str, project_id: str, text: str) -> Optional[dic
     try:
         return json.loads(match.group())
     except json.JSONDecodeError as exc:
-        logger.warning("JSON parse error for %s: %s — raw: %.200s", filename, exc, content)
+        logger.warning("JSON parse error for %s: %s - raw: %.200s", filename, exc, content)
         return None
 
 
@@ -260,7 +260,7 @@ def extract_and_store(pdf_path: Path, project_id: str, force: bool = False) -> b
     filename = pdf_path.name
 
     if not force and store.is_doc_extracted(project_id, filename):
-        logger.debug("Wiki: already extracted %s — skipping", filename)
+        logger.debug("Wiki: already extracted %s - skipping", filename)
         return False
 
     t0 = time.perf_counter()
@@ -289,7 +289,7 @@ def extract_and_store(pdf_path: Path, project_id: str, force: bool = False) -> b
 
     if data is None:
         logger.info(
-            "  Wiki: no data extracted from %s (%.1fs) — text_len=%d",
+            "  Wiki: no data extracted from %s (%.1fs) - text_len=%d",
             filename, elapsed, len(text),
         )
         return False

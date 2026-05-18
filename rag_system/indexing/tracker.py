@@ -1,12 +1,12 @@
 """
-tracker.py — SQLite-based file tracker for incremental indexing.
+tracker.py - SQLite-based file tracker for incremental indexing.
 
 Tracks which PDF files have been indexed, using MD5 content hashes to detect
 changes. Only new or modified files are processed on subsequent runs.
 
 Tables:
-  processed_files  — one row per indexed PDF
-  skipped_projects — project folders skipped due to being empty/unreadable
+  processed_files  - one row per indexed PDF
+  skipped_projects - project folders skipped due to being empty/unreadable
 """
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ def is_already_indexed(file_path: Path) -> bool:
         ).fetchone()
 
     if row is None:
-        return False  # Never seen, or previously failed — allow retry
+        return False  # Never seen, or previously failed - allow retry
 
     # Re-hash to detect content changes
     current_hash = compute_hash(file_path)
@@ -135,7 +135,7 @@ def mark_failed(file_path: Path, project_id: str, reason: str):
                 status     = 'failed',
                 error      = excluded.error
         """, (path_str, file_hash, project_id, indexed_at, str(reason)[:500]))
-    logger.warning("Marked as failed: %s — %s", file_path.name, reason)
+    logger.warning("Marked as failed: %s - %s", file_path.name, reason)
 
 
 def record_skipped_project(project_id: str, folder_path: Path, reason: str, pdf_count: int = 0):

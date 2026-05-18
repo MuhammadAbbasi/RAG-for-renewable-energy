@@ -1,5 +1,5 @@
 """
-pipeline.py — Main indexing pipeline.
+pipeline.py - Main indexing pipeline.
 
 This is the orchestrator that ties together every processing step:
   1. Scan DATA_DIR for project folders (auto-detects new ones).
@@ -19,7 +19,7 @@ This is the orchestrator that ties together every processing step:
 
 Speed improvements vs. v1:
   • Parallel PNG rendering: all scanned pages are rendered to PNG concurrently
-    (ThreadPoolExecutor, pure CPU) before GPU OCR starts — overlaps CPU+GPU work.
+    (ThreadPoolExecutor, pure CPU) before GPU OCR starts - overlaps CPU+GPU work.
   • Batch embeddings: all chunks embedded in one Ollama /api/embed call instead
     of N sequential calls.  500 chunks: ~3s vs ~30s.
   • Fixed sleep: the 20s VRAM-swap cooldown only triggers when image captions
@@ -28,7 +28,7 @@ Speed improvements vs. v1:
     parallel.  Text-only PDFs (no GPU OCR/captioning) benefit most; a GPU
     semaphore serialises GPU-heavy phases automatically.
   • Skip captioning on scanned pages: images on scanned pages ARE the page
-    scan — captioning them with qwen2.5vl causes 8-min timeouts for zero gain.
+    scan - captioning them with qwen2.5vl causes 8-min timeouts for zero gain.
 
 Empty / skipped project folders are written to:
   logs/skipped_projects.csv  (appended every run, no duplicates)
@@ -64,7 +64,7 @@ from rag_system.ingestion import (
     chunker,
 )
 
-# Wiki extraction — optional, import gracefully so RAG still works if wiki module fails
+# Wiki extraction - optional, import gracefully so RAG still works if wiki module fails
 try:
     from rag_system.wiki import extractor as wiki_extractor
     from rag_system.wiki import store as wiki_store
@@ -169,7 +169,7 @@ def _log_skipped_project(
         with open(csv_path, "r", encoding="utf-8") as f:
             existing_ids = {row["project_id"] for row in csv.DictReader(f)}
         if project_id in existing_ids:
-            logger.debug("Project '%s' already in skipped CSV — updating.", project_id)
+            logger.debug("Project '%s' already in skipped CSV - updating.", project_id)
             _update_skipped_csv(project_id, reason, pdf_count, empty_pdf_names or [])
             return
 
@@ -190,7 +190,7 @@ def _log_skipped_project(
     except Exception:
         pass
 
-    logger.warning("Skipped project: '%s' — %s", project_id, reason)
+    logger.warning("Skipped project: '%s' - %s", project_id, reason)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -269,7 +269,7 @@ def _process_pdf(pdf_path: Path, project_id: str) -> int:
     logger.info("  → Processing: %s", pdf_path.name)
 
     # ── Pre-validation: detect corrupted PDFs before native libraries crash ──
-    # pdfplumber uses pdfminer (pure Python) — if it can't open the file,
+    # pdfplumber uses pdfminer (pure Python) - if it can't open the file,
     # the PDF is malformed. Letting PyMuPDF/EasyOCR touch it risks SIGABRT.
     try:
         import pdfplumber as _pdfplumber
@@ -277,7 +277,7 @@ def _process_pdf(pdf_path: Path, project_id: str) -> int:
             _ = len(_probe.pages)  # force full open
     except Exception as _probe_exc:
         logger.error(
-            "  Pre-validation failed for %s — PDF is corrupted/unreadable (%s). Skipping.",
+            "  Pre-validation failed for %s - PDF is corrupted/unreadable (%s). Skipping.",
             pdf_path.name, _probe_exc,
         )
         return 0
@@ -328,10 +328,10 @@ def _process_pdf(pdf_path: Path, project_id: str) -> int:
                 pg       = f"p.{page.page_number}/{page.total_pages}"
                 png_bytes = png_cache.get(page.page_number, b"")
                 if png_bytes:
-                    logger.info("    %s — OCR (scanned page)…", pg)
+                    logger.info("    %s - OCR (scanned page)…", pg)
                     page.ocr_text = ocr_engine.ocr_page_bytes(png_bytes)
                     logger.info(
-                        "    %s — OCR done (%d chars)", pg, len(page.ocr_text or "")
+                        "    %s - OCR done (%d chars)", pg, len(page.ocr_text or "")
                     )
 
     # ── 3c: Attach tables to pages ───────────────────────────────────────────
@@ -353,7 +353,7 @@ def _process_pdf(pdf_path: Path, project_id: str) -> int:
         with _GPU_LOCK:
             for page in image_pages:
                 pg = f"p.{page.page_number}/{page.total_pages}"
-                logger.info("    %s — captioning %d image(s)…", pg, len(page.images))
+                logger.info("    %s - captioning %d image(s)…", pg, len(page.images))
                 context_text = page.text or page.ocr_text or ""
                 page.image_captions = [
                     cap for cap in image_captioner.caption_images_batch(
@@ -363,7 +363,7 @@ def _process_pdf(pdf_path: Path, project_id: str) -> int:
                 ]
                 if page.image_captions:
                     captions_generated = True
-                logger.info("    %s — captioning done", pg)
+                logger.info("    %s - captioning done", pg)
 
     # ── Step 4: Semantic chunking ────────────────────────────────────────────
     logger.info("  [4/6] Chunking %s…", pdf_path.name)
@@ -384,7 +384,7 @@ def _process_pdf(pdf_path: Path, project_id: str) -> int:
             logger.info("  Waiting 20s for GPU memory to clear…")
             time.sleep(20)
 
-    # ── Step 5: Embed (batch API — one HTTP call for all chunks) ─────────────
+    # ── Step 5: Embed (batch API - one HTTP call for all chunks) ─────────────
     logger.info("  [5/6] Embedding %d chunks…", len(docs))
     docs_with_vectors = embedder.embed_documents(docs)
     if not docs_with_vectors:
@@ -559,7 +559,7 @@ def run_indexing(
                 with _stats_lock:
                     stats["failed_pdfs"] += 1
 
-    # ── tqdm progress bar — wraps the PDF-level counter ──────────────────────
+    # ── tqdm progress bar - wraps the PDF-level counter ──────────────────────
     show_bar = config.SHOW_PROGRESS and _TQDM_AVAILABLE and _to_process > 0
     _pbar = (
         _tqdm(

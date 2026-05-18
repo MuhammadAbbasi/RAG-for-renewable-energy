@@ -187,7 +187,7 @@ def stream_answer(
                 yield "\n\n__SOURCES__:" + json.dumps(wiki_src, ensure_ascii=False)
                 return
             else:
-                # Wiki has no data for this question — fall back to RAG
+                # Wiki has no data for this question - fall back to RAG
                 logger.info("Wiki returned empty result, falling back to RAG for: %s", question[:60])
                 query_route = QueryRoute.RAG
         except Exception as exc:

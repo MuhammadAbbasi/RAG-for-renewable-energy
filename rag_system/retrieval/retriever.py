@@ -1,13 +1,13 @@
 """
-retriever.py — Hybrid retrieval: dense (Qdrant cosine) + BM25 keyword re-rank.
+retriever.py - Hybrid retrieval: dense (Qdrant cosine) + BM25 keyword re-rank.
 
 Strategy
 --------
-1. Dense pass  — embed the query with bge-m3; retrieve top_k * BM25_OVERRETRIEVE
+1. Dense pass  - embed the query with bge-m3; retrieve top_k * BM25_OVERRETRIEVE
    candidates from Qdrant (wider net so BM25 has enough material to re-rank).
-2. BM25 pass   — build a BM25Okapi index over the candidate texts and score each
+2. BM25 pass   - build a BM25Okapi index over the candidate texts and score each
    against the raw query tokens; normalize to [0,1].
-3. Merge        — final_score = (1-BM25_WEIGHT)*dense_score + BM25_WEIGHT*bm25_score
+3. Merge        - final_score = (1-BM25_WEIGHT)*dense_score + BM25_WEIGHT*bm25_score
    Sort descending, return top_k.
 
 BM25 disables automatically when rank_bm25 is not installed (pure dense fallback).
@@ -29,7 +29,7 @@ try:
     _BM25_AVAILABLE = True
 except ImportError:
     _BM25_AVAILABLE = False
-    logger.info("rank_bm25 not installed — BM25 hybrid disabled (pure dense retrieval)")
+    logger.info("rank_bm25 not installed - BM25 hybrid disabled (pure dense retrieval)")
 
 
 def _tokenize(text: str) -> list[str]:
@@ -44,10 +44,10 @@ def _bm25_rerank(query: str, candidates: list[dict], weight: float) -> list[dict
         bm25       = _BM25(corpus)
         raw_scores = list(bm25.get_scores(_tokenize(query)))  # convert numpy → plain list
     except Exception as exc:
-        logger.warning("BM25 scoring failed (%s) — using dense scores only", exc)
+        logger.warning("BM25 scoring failed (%s) - using dense scores only", exc)
         return candidates
 
-    # If BM25 found zero keyword overlap, skip reranking entirely — use pure dense scores.
+    # If BM25 found zero keyword overlap, skip reranking entirely - use pure dense scores.
     # Without this guard, combined = 0.7*dense + 0.3*0.0 = 0.7*dense, effectively
     # raising the score_threshold by ~43% and silently dropping valid chunks.
     if not raw_scores or max(raw_scores) == 0:

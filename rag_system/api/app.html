@@ -206,7 +206,7 @@ a{color:inherit;text-decoration:none}
 .typing-dot span:nth-child(3){animation-delay:.3s}
 @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
 
-/* Sources section — below the bubble */
+/* Sources section - below the bubble */
 .src-section{margin-top:6px;width:100%}
 .src-toggle{
   display:inline-flex;align-items:center;gap:5px;
@@ -545,7 +545,7 @@ a{color:inherit;text-decoration:none}
   <div class="tb-sep"></div>
   <div class="tb-user-pill" id="user-pill">
     <div class="avatar" id="user-avatar">?</div>
-    <span id="user-name">—</span>
+    <span id="user-name">-</span>
     <span class="tb-role-badge" id="user-role">user</span>
   </div>
   <button class="tb-btn" id="admin-toggle-btn" onclick="toggleAdminPanel()" style="display:none">⚙ Admin</button>
@@ -617,10 +617,10 @@ a{color:inherit;text-decoration:none}
       <!-- Data pane -->
       <div class="rp-pane active" id="pane-data">
         <div class="stats-grid" id="stats-grid">
-          <div class="stat-card"><div class="stat-val" id="stat-projects">—</div><div class="stat-lbl">Progetti</div></div>
-          <div class="stat-card"><div class="stat-val" id="stat-docs">—</div><div class="stat-lbl">Documenti</div></div>
-          <div class="stat-card"><div class="stat-val" id="stat-chunks">—</div><div class="stat-lbl">Chunk</div></div>
-          <div class="stat-card"><div class="stat-val" id="stat-collections">—</div><div class="stat-lbl">Collezioni</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-projects">-</div><div class="stat-lbl">Progetti</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-docs">-</div><div class="stat-lbl">Documenti</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-chunks">-</div><div class="stat-lbl">Chunk</div></div>
+          <div class="stat-card"><div class="stat-val" id="stat-collections">-</div><div class="stat-lbl">Collezioni</div></div>
         </div>
         <div id="file-tree"></div>
       </div>
@@ -698,7 +698,7 @@ a{color:inherit;text-decoration:none}
             <option value="failed">⛔ Con errori</option>
             <option value="partial">⚠ Incompleti</option>
             <option value="ok">✓ Completati</option>
-            <option value="skipped">— Saltati</option>
+            <option value="skipped">- Saltati</option>
           </select>
           <input id="log-search" type="text" placeholder="Cerca progetto…" oninput="renderLogProjects()" style="flex:2;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:5px;font-size:11px;color:var(--text-main);outline:none">
           <button onclick="loadLog()" title="Aggiorna" style="padding:5px 9px;background:var(--bg-card);border:1px solid var(--border);border-radius:5px;font-size:12px;color:var(--text-muted);cursor:pointer">↻</button>
@@ -759,7 +759,7 @@ a{color:inherit;text-decoration:none}
 <div class="overlay hidden" id="modal-apikey">
   <div class="modal">
     <h3>Chiave API rigenerata</h3>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px">Copia questa chiave — non verrà mostrata di nuovo.</p>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px">Copia questa chiave - non verrà mostrata di nuovo.</p>
     <div class="api-key-box" id="apikey-display"></div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="copyApiKey()">📋 Copia</button>
@@ -830,7 +830,7 @@ function _buildSourcesSection(sources){
     si.className = 'src-item';
     const score = s.score != null ? (s.score*100).toFixed(0)+'%' : '';
     const docId = escapeHtml(s.document_id || s.source || '');
-    const page  = s.page ? ` — p.${s.page}` : '';
+    const page  = s.page ? ` - p.${s.page}` : '';
     si.innerHTML = score
       ? `<span class="src-score">${score}</span><span>${docId}${page}</span>`
       : `<span>${docId}${page}</span>`;
@@ -1083,10 +1083,10 @@ async function loadStats(indexingActive=false){
     const r = await fetch('/v1/stats',{headers:{Authorization:'Bearer '+_token}});
     if(!r.ok) return;
     const d = await r.json();
-    $('stat-projects').textContent    = d.total_projects   ?? '—';
-    $('stat-docs').textContent        = d.total_documents  ?? '—';
+    $('stat-projects').textContent    = d.total_projects   ?? '-';
+    $('stat-docs').textContent        = d.total_documents  ?? '-';
     $('stat-chunks').textContent      = (d.total_chunks??0).toLocaleString('it');
-    $('stat-collections').textContent = d.total_collections ?? '—';
+    $('stat-collections').textContent = d.total_collections ?? '-';
 
     // Build file tree
     const tree = $('file-tree');
@@ -1234,7 +1234,7 @@ function sendStarter(q){
 }
 
 // Max seconds to wait for the FIRST token before giving up
-const STREAM_FIRST_TOKEN_TIMEOUT = 600; // 10 min — qwen3:35b on CPU-offload needs time
+const STREAM_FIRST_TOKEN_TIMEOUT = 600; // 10 min - qwen3:35b on CPU-offload needs time
 // Max seconds of silence between tokens before giving up
 const STREAM_IDLE_TIMEOUT = 90;
 
@@ -1399,7 +1399,7 @@ async function sendMessage(){
         } else {
           const reason = gotFirstToken
             ? `Risposta interrotta dopo ${STREAM_IDLE_TIMEOUT}s di inattività.`
-            : `Nessuna risposta dal modello in ${STREAM_FIRST_TOKEN_TIMEOUT}s. Il modello potrebbe essere occupato con l'indicizzazione — riprova tra qualche minuto.`;
+            : `Nessuna risposta dal modello in ${STREAM_FIRST_TOKEN_TIMEOUT}s. Il modello potrebbe essere occupato con l'indicizzazione - riprova tra qualche minuto.`;
           bubble.innerHTML=`<span style="color:var(--yellow)">⏱ ${escapeHtml(reason)}</span>`;
         }
       }
@@ -1598,7 +1598,7 @@ async function deleteSource(id){
 let _indexPollTimer=null;
 
 async function checkIndexStatus(){
-  // Called on login — resume live poll if indexing already running
+  // Called on login - resume live poll if indexing already running
   try{
     const r=await fetch('/v1/index/status',{headers:{Authorization:'Bearer '+_token}});
     if(!r.ok) return;
@@ -1624,9 +1624,9 @@ async function triggerIndex(){
     });
     const d=await r.json();
     if(!r.ok){
-      // 409 = already running — start polling anyway so UI shows live progress
+      // 409 = already running - start polling anyway so UI shows live progress
       if(r.status===409){
-        toast('Indicizzazione già in corso — monitoraggio attivo','ok');
+        toast('Indicizzazione già in corso - monitoraggio attivo','ok');
       } else {
         toast(d.detail||'Errore avvio','err');
         return;
@@ -1799,7 +1799,7 @@ function renderLogProjects(){
     const card=document.createElement('div');
     card.className='log-proj';
 
-    const healthLabel={ok:'✓ OK',partial:'⚠ Parziale',failed:'⛔ Errori',skipped:'— Saltato',empty:'○ Vuoto'}[p.health]||p.health;
+    const healthLabel={ok:'✓ OK',partial:'⚠ Parziale',failed:'⛔ Errori',skipped:'- Saltato',empty:'○ Vuoto'}[p.health]||p.health;
     const pct=p.total_on_disk>0?Math.round(p.indexed/p.total_on_disk*100):0;
     const metaStr=`${p.indexed}/${p.total_on_disk} file · ${(p.total_chunks||0).toLocaleString()} chunk`;
 
@@ -1837,8 +1837,8 @@ function renderLogProjects(){
       row.innerHTML=`
         <span class="log-file-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>
         <span class="log-file-status ${f.status}">${statusLabels[f.status]||f.status}</span>
-        ${f.chunks?`<span class="log-file-chunks">${f.chunks} ch</span>`:'<span class="log-file-chunks">—</span>'}
-        <span class="log-file-date">${escapeHtml(f.indexed_at||'—')}</span>
+        ${f.chunks?`<span class="log-file-chunks">${f.chunks} ch</span>`:'<span class="log-file-chunks">-</span>'}
+        <span class="log-file-date">${escapeHtml(f.indexed_at||'-')}</span>
         ${f.error?`<span class="log-file-err" title="${escapeHtml(f.error)}">${escapeHtml(f.error.substring(0,60))}</span>`:''}
       `;
       fileList.appendChild(row);

@@ -1,5 +1,5 @@
 """
-server.py — FastAPI server exposing an OpenAI-compatible API.
+server.py - FastAPI server exposing an OpenAI-compatible API.
 
 Endpoints:
   POST /auth/login                     → log in, get session token
@@ -50,7 +50,7 @@ from rag_system.generation.chain import answer, stream_answer
 from rag_system.indexing import vector_store, tracker
 from rag_system.indexing.priority import QUERY_GATE
 
-# Wiki module — optional
+# Wiki module - optional
 try:
     from rag_system.wiki import store as wiki_store
     from rag_system.wiki import extractor as wiki_extractor
@@ -100,7 +100,7 @@ def _log_query(username: str, question: str, project_id: Optional[str],
 # ── App ───────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title="A176LAB — RAG API",
+    title="A176LAB - RAG API",
     description="OpenAI-compatible RAG API for Italian PDF document retrieval",
     version="2.0.0",
 )
@@ -117,7 +117,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     authlib.init_auth_db()
-    logger.info("Auth DB initialised — default admin: admin / admin123")
+    logger.info("Auth DB initialised - default admin: admin / admin123")
     logger.info("Query analytics log: %s", _QUERY_LOG)
 
 
@@ -134,7 +134,7 @@ def _token_from_request(request: Request) -> Optional[str]:
 
 
 def get_current_user(request: Request) -> Optional[dict]:
-    """Return session dict or None (soft auth — doesn't raise)."""
+    """Return session dict or None (soft auth - doesn't raise)."""
     token = _token_from_request(request)
     if not token:
         return None
@@ -145,7 +145,7 @@ def get_current_user(request: Request) -> Optional[dict]:
 
 
 def require_user(request: Request) -> dict:
-    """Dependency — raises 401 if not logged in."""
+    """Dependency - raises 401 if not logged in."""
     user = get_current_user(request)
     if not user:
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -153,7 +153,7 @@ def require_user(request: Request) -> dict:
 
 
 def require_admin(request: Request) -> dict:
-    """Dependency — raises 401/403 if not admin."""
+    """Dependency - raises 401/403 if not admin."""
     user = require_user(request)
     if user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -425,7 +425,7 @@ async def trigger_indexing(
             _cfg.FORCE_REINDEX = True
         try:
             logger.info(
-                "Indexing triggered by %s — project=%s force=%s",
+                "Indexing triggered by %s - project=%s force=%s",
                 user["username"], project_filter or "ALL", req.force_reindex
             )
             loop = asyncio.get_event_loop()
@@ -444,7 +444,7 @@ async def trigger_indexing(
 
     asyncio.create_task(_run())
     scope_msg = f'Progetto "{project_filter}"' if project_filter else "Tutti i progetti"
-    return {"ok": True, "message": f"{scope_msg} — indicizzazione avviata in background"}
+    return {"ok": True, "message": f"{scope_msg} - indicizzazione avviata in background"}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -787,7 +787,7 @@ def health():
 @app.get("/debug/query")
 def debug_query(q: str = "requisiti tecnici", user: dict = Depends(require_user), request: Request = None):
     """
-    Diagnostic endpoint — tests every step of the retrieval pipeline and reports
+    Diagnostic endpoint - tests every step of the retrieval pipeline and reports
     exactly where it fails.  Open in browser:
       http://localhost:8000/debug/query?q=your+question
     """
@@ -800,20 +800,20 @@ def debug_query(q: str = "requisiti tecnici", user: dict = Depends(require_user)
     try:
         vec = emb.embed_text(q)
         if vec is None:
-            report["embed"] = "FAIL — embed_text returned None (Ollama unreachable or model not loaded)"
+            report["embed"] = "FAIL - embed_text returned None (Ollama unreachable or model not loaded)"
         else:
-            report["embed"] = f"OK — {len(vec)}-dim vector, first 3 values: {vec[:3]}"
+            report["embed"] = f"OK - {len(vec)}-dim vector, first 3 values: {vec[:3]}"
     except Exception as e:
-        report["embed"] = f"ERROR — {e}\n{traceback.format_exc()}"
+        report["embed"] = f"ERROR - {e}\n{traceback.format_exc()}"
         vec = None
 
     # 2. Qdrant connection
     try:
         cols = vector_store.get_client().get_collections().collections
         col_names = [c.name for c in cols if c.name.startswith(config.QDRANT_COLLECTION_PREFIX)]
-        report["qdrant"] = f"OK — {len(col_names)} RAG collections: {col_names}"
+        report["qdrant"] = f"OK - {len(col_names)} RAG collections: {col_names}"
     except Exception as e:
-        report["qdrant"] = f"ERROR — {e}"
+        report["qdrant"] = f"ERROR - {e}"
         col_names = []
 
     # 3. Point counts
@@ -838,13 +838,13 @@ def debug_query(q: str = "requisiti tecnici", user: dict = Depends(require_user)
             )
             scores = [round(h.score, 4) for h in response.points]
             report["raw_search"] = (
-                f"OK — top-3 scores from '{col_names[0]}': {scores}. "
+                f"OK - top-3 scores from '{col_names[0]}': {scores}. "
                 f"Config threshold is {config.RETRIEVAL_SCORE_THRESHOLD}. "
-                + ("⚠ All below threshold — lower RETRIEVAL_SCORE_THRESHOLD in .env"
+                + ("⚠ All below threshold - lower RETRIEVAL_SCORE_THRESHOLD in .env"
                    if scores and max(scores) < config.RETRIEVAL_SCORE_THRESHOLD else "")
             )
         except Exception as e:
-            report["raw_search"] = f"ERROR — {e}"
+            report["raw_search"] = f"ERROR - {e}"
     else:
         report["raw_search"] = "SKIPPED (embed or Qdrant failed)"
 
@@ -854,12 +854,12 @@ def debug_query(q: str = "requisiti tecnici", user: dict = Depends(require_user)
             from rag_system.retrieval.retriever import retrieve
             results = retrieve(q)
             report["retrieve"] = (
-                f"OK — {len(results)} chunks returned above threshold {config.RETRIEVAL_SCORE_THRESHOLD}"
+                f"OK - {len(results)} chunks returned above threshold {config.RETRIEVAL_SCORE_THRESHOLD}"
                 if results else
-                f"EMPTY — 0 chunks above threshold {config.RETRIEVAL_SCORE_THRESHOLD}"
+                f"EMPTY - 0 chunks above threshold {config.RETRIEVAL_SCORE_THRESHOLD}"
             )
         except Exception as e:
-            report["retrieve"] = f"ERROR — {e}"
+            report["retrieve"] = f"ERROR - {e}"
 
     return report
 
@@ -953,7 +953,7 @@ def list_project_files(project_id: str):
 async def chat_completions(req: ChatRequest, request: Request):
     """
     OpenAI-compatible chat completions endpoint.
-    Auth is optional — works without a token for Open-WebUI compatibility.
+    Auth is optional - works without a token for Open-WebUI compatibility.
     When a token is present the query is attributed to that user in the log.
     """
     if not req.messages:
@@ -1030,7 +1030,7 @@ async def chat_completions(req: ChatRequest, request: Request):
                 yield _sse_done()
             finally:
                 QUERY_GATE.set()
-                # Always log — even zero-source queries help diagnose embedding failures
+                # Always log - even zero-source queries help diagnose embedding failures
                 _log_query(username, question, project_id, req.model,
                            (time.time() - t0) * 1000, len(sources))
         return StreamingResponse(generate(), media_type="text/event-stream")
@@ -1232,7 +1232,7 @@ def chat_app():
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard():
-    """System dashboard — project browser."""
+    """System dashboard - project browser."""
     import re as _re
     stats    = tracker.get_stats()
     projects = _tracker_all_projects_files()
@@ -1245,7 +1245,7 @@ def dashboard():
         n_failed = sum(1 for f in files if f["status"] == "failed")
         n_chunks = sum(f["chunks"] for f in files)
         skipped_badge = (
-            f'<span class="badge skip">SKIPPED — {info["reason"]}</span>'
+            f'<span class="badge skip">SKIPPED - {info["reason"]}</span>'
             if info["skipped"] and not files else ""
         )
         rows = ""

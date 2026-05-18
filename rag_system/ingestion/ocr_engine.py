@@ -1,11 +1,11 @@
 """
-ocr_engine.py — GPU-accelerated OCR for scanned PDF pages.
+ocr_engine.py - GPU-accelerated OCR for scanned PDF pages.
 
 Engine priority (fastest → slowest):
-  1. EasyOCR  — CRAFT + CRNN models, CUDA-accelerated, Italian+English
+  1. EasyOCR  - CRAFT + CRNN models, CUDA-accelerated, Italian+English
                 ~1-3s per page on GPU vs 30-120s with a VLM
-  2. qwen2.5vl — Ollama vision model (fallback when EasyOCR unavailable)
-  3. Tesseract — CPU-only last resort
+  2. qwen2.5vl - Ollama vision model (fallback when EasyOCR unavailable)
+  3. Tesseract - CPU-only last resort
 
 EasyOCR loads its models once at first call and keeps them in VRAM.
 Subsequent pages are processed in ~1s each.
@@ -32,7 +32,7 @@ from rag_system import config
 logger = logging.getLogger(__name__)
 
 
-# ─── EasyOCR (primary — GPU) ──────────────────────────────────────────────────
+# ─── EasyOCR (primary - GPU) ──────────────────────────────────────────────────
 
 _easyocr_reader = None          # Loaded lazily; kept alive for the whole process
 _easyocr_attempted = False      # Avoid retrying a failed init on every page
@@ -62,12 +62,12 @@ def _get_easyocr_reader():
         logger.info("EasyOCR ready ✓  (GPU-accelerated OCR active)")
     except ImportError:
         logger.warning(
-            "EasyOCR not installed — falling back to qwen2.5vl for OCR.\n"
+            "EasyOCR not installed - falling back to qwen2.5vl for OCR.\n"
             "  Install: pip install easyocr numpy"
         )
         _easyocr_reader = None
     except Exception as exc:
-        logger.warning("EasyOCR init failed (%s) — falling back to qwen2.5vl", exc)
+        logger.warning("EasyOCR init failed (%s) - falling back to qwen2.5vl", exc)
         _easyocr_reader = None
 
     return _easyocr_reader
@@ -110,7 +110,7 @@ _OCR_SYSTEM_PROMPT = (
     "Sei un sistema OCR esperto per documenti tecnici italiani. "
     "Estrai TUTTO il testo visibile nell'immagine, mantenendo la struttura originale. "
     "Per le tabelle preserva righe e colonne separando le celle con ' | '. "
-    "Non aggiungere commenti — solo il testo estratto."
+    "Non aggiungere commenti - solo il testo estratto."
 )
 
 _OCR_USER_PROMPT = (
@@ -174,7 +174,7 @@ def _ocr_with_vision_model(png_bytes: bytes) -> str:
         return ""
 
 
-# ─── Tesseract (tertiary fallback — CPU) ──────────────────────────────────────
+# ─── Tesseract (tertiary fallback - CPU) ──────────────────────────────────────
 
 def _tesseract_available() -> bool:
     try:
@@ -208,7 +208,7 @@ def ocr_page_bytes(png_bytes: bytes) -> str:
     Run OCR on a rendered PDF page image.
 
     Engine priority:
-      1. EasyOCR  (GPU CUDA — CRAFT+CRNN, ~1-3s/page)  ← primary
+      1. EasyOCR  (GPU CUDA - CRAFT+CRNN, ~1-3s/page)  ← primary
       2. qwen2.5vl via Ollama  (GPU VLM, ~30-120s/page)  ← if EasyOCR not installed
       3. Tesseract (CPU)                                  ← last resort
 
@@ -221,31 +221,31 @@ def ocr_page_bytes(png_bytes: bytes) -> str:
     if not png_bytes:
         return ""
 
-    # ── 1. EasyOCR (primary — GPU, fast) ─────────────────────────────────────
+    # ── 1. EasyOCR (primary - GPU, fast) ─────────────────────────────────────
     text = _ocr_with_easyocr(png_bytes)
     if text:
         return text
 
     # ── 2. qwen2.5vl fallback ────────────────────────────────────────────────
     # Skip qwen2.5vl for very small images (< 50 KB).
-    # In practice these are blank, encrypted, or corrupted pages — qwen2.5vl
+    # In practice these are blank, encrypted, or corrupted pages - qwen2.5vl
     # always times out on them (seen: 32028-byte pages in ANAS_PA_AUTOST_n_027770_21).
     _MIN_VLM_SIZE = 50 * 1024   # 50 KB
     if len(png_bytes) < _MIN_VLM_SIZE:
         logger.info(
-            "Skipping qwen2.5vl OCR — image too small (%d bytes < %d KB threshold), "
+            "Skipping qwen2.5vl OCR - image too small (%d bytes < %d KB threshold), "
             "likely blank or encrypted page",
             len(png_bytes), _MIN_VLM_SIZE // 1024,
         )
     else:
-        logger.info("EasyOCR returned empty — trying qwen2.5vl…")
+        logger.info("EasyOCR returned empty - trying qwen2.5vl…")
         text = _ocr_with_vision_model(png_bytes)
         if text:
             return text
 
     # ── 3. Tesseract last resort ─────────────────────────────────────────────
     if _tesseract_available():
-        logger.info("qwen2.5vl returned empty — falling back to Tesseract")
+        logger.info("qwen2.5vl returned empty - falling back to Tesseract")
         return _ocr_with_tesseract(png_bytes)
 
     return ""

@@ -1,5 +1,5 @@
 """
-main.py — CLI entry point for the Offline RAG System.
+main.py - CLI entry point for the Offline RAG System.
 
 Commands:
   python -m rag_system.main index              → index all projects

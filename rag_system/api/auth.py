@@ -1,7 +1,7 @@
 """
-auth.py — Authentication, user management, and data source registry.
+auth.py - Authentication, user management, and data source registry.
 
-Uses only Python stdlib (hashlib, hmac, secrets) — no extra packages.
+Uses only Python stdlib (hashlib, hmac, secrets) - no extra packages.
 Passwords: PBKDF2-HMAC-SHA256 with random salt (260 000 iterations).
 Sessions:  Random URL-safe token stored in SQLite with 24h expiry.
 API keys:  Per-user static key for Open-WebUI / curl access.
@@ -255,7 +255,7 @@ def add_data_source(path: str, label: str, added_by: str) -> tuple[bool, str]:
     - Windows host paths are NOT visible inside Docker; users must supply the
       container-internal path (see docker-compose.yml volume mounts).
     - If the path doesn't exist yet (e.g. it will be mounted later) the source
-      is still registered — indexing will skip it gracefully if absent at run time.
+      is still registered - indexing will skip it gracefully if absent at run time.
     """
     # Normalise: strip trailing slashes / backslashes
     path = path.strip().rstrip("/\\")
@@ -269,7 +269,7 @@ def add_data_source(path: str, label: str, added_by: str) -> tuple[bool, str]:
         translated = "/app/data"
         import logging
         logging.getLogger(__name__).warning(
-            "Windows path '%s' detected on Linux container — using '%s' instead",
+            "Windows path '%s' detected on Linux container - using '%s' instead",
             path, translated,
         )
         path = translated

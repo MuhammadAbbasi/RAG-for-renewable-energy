@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-reindex_missing.py — Index all projects that have unindexed or failed PDF files.
+reindex_missing.py - Index all projects that have unindexed or failed PDF files.
 
 Run INSIDE the Docker container:
     docker exec -it rag_system python reindex_missing.py
@@ -99,7 +99,7 @@ def main():
         print("\n  --dry-run mode: skipping actual indexing.")
         return
 
-    print("\n  Starting indexing pipeline — check container logs for progress.\n")
+    print("\n  Starting indexing pipeline - check container logs for progress.\n")
     from rag_system.indexing.pipeline import run_indexing
     run_indexing()
     print("\n  Done. Run this script again to verify coverage.")

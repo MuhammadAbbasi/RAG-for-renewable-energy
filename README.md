@@ -1,7 +1,7 @@
-# A176LAB — RAG System V2
+# A176LAB - RAG System V2
 
 Offline, GPU-accelerated Retrieval-Augmented Generation for Italian PDF documents.  
-Runs entirely on local hardware — no cloud, no data leakage.
+Runs entirely on local hardware with no cloud and no data leakage.
 
 ---
 
@@ -18,14 +18,14 @@ Runs entirely on local hardware — no cloud, no data leakage.
 
 ## Prerequisites
 
-1. **Docker Desktop** (with WSL2 backend on Windows) — [docs.docker.com](https://docs.docker.com)
-2. **Ollama** running locally — [ollama.com](https://ollama.com)
+1. **Docker Desktop** (with WSL2 backend on Windows) - [docs.docker.com](https://docs.docker.com)
+2. **Ollama** running locally - [ollama.com](https://ollama.com)
 3. **NVIDIA Container Toolkit** (for GPU passthrough in Docker on Linux)
 
 ### Pull required models into Ollama
 
 ```bash
-# Primary LLM (35B MoE — requires ~20 GB VRAM or runs on CPU with 64 GB RAM)
+# Primary LLM (35B MoE - requires ~20 GB VRAM or runs on CPU with 64 GB RAM)
 ollama pull qwen3.6:35b-a3b
 
 # Vision model (image captioning, map descriptions)
@@ -34,7 +34,7 @@ ollama pull qwen2.5vl:latest
 # Primary embedding model (multilingual, 1024-dim, optimised for Italian)
 ollama pull bge-m3:latest
 
-# Fallback embedding (faster, 768-dim — used when bge-m3 is unavailable)
+# Fallback embedding (faster, 768-dim - used when bge-m3 is unavailable)
 ollama pull nomic-embed-text:latest
 ```
 
@@ -78,7 +78,7 @@ data/
 
 ### Via Admin UI
 
-**Admin → Indicizzazione** — shows per-project coverage, lets you trigger indexing with or without force re-index.
+**Admin → Indicizzazione** - shows per-project coverage, lets you trigger indexing with or without force re-index.
 
 ### Via API
 
@@ -97,18 +97,18 @@ curl -X POST http://localhost:8000/v1/data-sources \
 
 1. Log in as admin → open the **Indicizzazione** panel
 2. Optionally tick **Forza ri-indicizzazione** to re-process all files
-3. Click **▶ Avvia indicizzazione** — progress appears in the container logs
+3. Click **▶ Avvia indicizzazione** - progress appears in the container logs
 
 ### Via terminal (inside container)
 
 ```bash
-# Standard run — skips already-indexed files
+# Standard run - skips already-indexed files
 docker exec -it rag_system python /app/rag_system/reindex_missing.py
 
-# Dry run — shows what would be indexed without actually doing it
+# Dry run - shows what would be indexed without actually doing it
 docker exec -it rag_system python /app/rag_system/reindex_missing.py --dry-run
 
-# Force — re-processes everything even if unchanged
+# Force - re-processes everything even if unchanged
 docker exec -it rag_system python /app/rag_system/reindex_missing.py --force
 ```
 
@@ -193,23 +193,23 @@ Select model `rag-all` to search all projects, or `rag-<project>` for a specific
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/auth/login` | — | Get session token |
+| POST | `/auth/login` | - | Get session token |
 | POST | `/auth/logout` | user | Invalidate token |
 | GET | `/auth/me` | user | Current user info |
 | GET | `/auth/users` | admin | List all users |
 | POST | `/auth/users` | admin | Create user |
 | PUT | `/auth/users/{id}` | admin | Update user |
 | DELETE | `/auth/users/{id}` | admin | Delete user |
-| GET | `/health` | — | Liveness check |
-| GET | `/` | — | System dashboard |
-| GET | `/app` | — | Chat web interface |
-| GET | `/docs` | — | Interactive API docs (Swagger) |
+| GET | `/health` | - | Liveness check |
+| GET | `/` | - | System dashboard |
+| GET | `/app` | - | Chat web interface |
+| GET | `/docs` | - | Interactive API docs (Swagger) |
 | POST | `/query` | user | Direct RAG query (streaming or blocking) |
 | GET | `/v1/stats` | user | Aggregated stats + per-project file tree |
 | GET | `/v1/projects` | user | List indexed projects with chunk counts |
 | GET | `/v1/projects/{id}/files` | user | Files indexed for a project |
-| GET | `/v1/models` | — | List available RAG models |
-| GET | `/v1/llm-models` | — | List Ollama LLMs available for generation |
+| GET | `/v1/models` | - | List available RAG models |
+| GET | `/v1/llm-models` | - | List Ollama LLMs available for generation |
 | POST | `/v1/chat/completions` | user | OpenAI-compatible streaming chat |
 | POST | `/v1/index` | admin | Trigger background re-indexing (`?force=true`) |
 | GET | `/v1/index/status` | user | Indexing running / idle |
@@ -223,7 +223,7 @@ Select model `rag-all` to search all projects, or `rag-<project>` for a specific
 ## Configuration
 
 All settings live in `.env` at the project root (create from `.env.example`).  
-Defaults work out of the box — only change what you need.
+Defaults work out of the box - only change what you need.
 
 ```env
 # ── Models ────────────────────────────────────────────────────────────────────
@@ -277,12 +277,12 @@ data/
     │           pipeline.py               │
     │  1. MD5 hash check (skip unchanged) │
     │  2. pdfplumber pre-validation        │
-    │  3. PDF parse — PyMuPDF              │
-    │  4. OCR scanned pages — EasyOCR GPU  │
-    │  5. Table extraction — pdfplumber    │
-    │  6. Image captioning — qwen2.5vl     │
+    │  3. PDF parse - PyMuPDF              │
+    │  4. OCR scanned pages - EasyOCR GPU  │
+    │  5. Table extraction - pdfplumber    │
+    │  6. Image captioning - qwen2.5vl     │
     │  7. Semantic chunking (1000 / 150)   │
-    │  8. Batch embed — bge-m3 (1024-dim)  │
+    │  8. Batch embed - bge-m3 (1024-dim)  │
     │  9. Upsert → Qdrant                  │
     │ 10. Mark indexed in tracker.db       │
     └─────────────────────────────────────┘
@@ -297,7 +297,7 @@ data/
          ▼  POST /query  or  /v1/chat/completions
     ┌─────────────────────────────────────┐
     │           retriever.py              │
-    │  1. Embed query — bge-m3            │
+    │  1. Embed query - bge-m3            │
     │  2. Dense search (top_k × 20 wide)  │
     │  3. BM25 re-rank (weight 0.3)       │
     │  4. Zero-signal guard (pure dense   │
@@ -317,13 +317,13 @@ data/
 
 ### Key design decisions
 
-**Query-priority gate** — when a user query arrives, a threading Event (`QUERY_GATE`) pauses all background embedding batches so Ollama can serve the LLM without resource contention. The gate auto-releases after 5 minutes via a watchdog thread to prevent permanent blocking.
+**Query-priority gate** - when a user query arrives, a threading Event (`QUERY_GATE`) pauses all background embedding batches so Ollama can serve the LLM without resource contention. The gate auto-releases after 5 minutes via a watchdog thread to prevent permanent blocking.
 
-**BM25 hybrid search** — after dense Qdrant retrieval, BM25 reranks candidates using keyword overlap. A zero-signal guard prevents score deflation when BM25 finds no keyword matches (which would artificially raise the effective threshold by ~43%).
+**BM25 hybrid search** - after dense Qdrant retrieval, BM25 reranks candidates using keyword overlap. A zero-signal guard prevents score deflation when BM25 finds no keyword matches (which would artificially raise the effective threshold by ~43%).
 
-**Incremental indexing** — each file is MD5-hashed before indexing. Unchanged files are skipped on subsequent runs. Failed files are always retried.
+**Incremental indexing** - each file is MD5-hashed before indexing. Unchanged files are skipped on subsequent runs. Failed files are always retried.
 
-**Corrupted PDF guard** — pdfplumber validates each PDF before PyMuPDF or EasyOCR touch it, preventing native library crashes (SIGABRT) from malformed files.
+**Corrupted PDF guard** - pdfplumber validates each PDF before PyMuPDF or EasyOCR touch it, preventing native library crashes (SIGABRT) from malformed files.
 
 ---
 
@@ -332,7 +332,7 @@ data/
 ```
 logs/
 ├── rag_YYYYMMDD.log     # Full server + indexing log (rotates daily, 50 MB max)
-├── query_log.jsonl      # One JSON line per query — user, question, sources, ms
+├── query_log.jsonl      # One JSON line per query - user, question, sources, ms
 └── skipped_projects.csv # Projects with no processable PDFs
 ```
 
@@ -356,13 +356,13 @@ http://localhost:8000/debug/query?q=your+question
 It tests every step: embed → Qdrant connection → point counts → raw scores → full retrieval, and reports exactly where the pipeline fails.
 
 Common causes:
-- **bge-m3 not loaded in Ollama** — run `ollama pull bge-m3:latest` and retry
-- **Score threshold too high** — lower `RETRIEVAL_SCORE_THRESHOLD` to `0.2` in `.env`
-- **Qdrant empty** — check `http://localhost:6333/dashboard` and re-run indexing
+- **bge-m3 not loaded in Ollama** - run `ollama pull bge-m3:latest` and retry
+- **Score threshold too high** - lower `RETRIEVAL_SCORE_THRESHOLD` to `0.2` in `.env`
+- **Qdrant empty** - check `http://localhost:6333/dashboard` and re-run indexing
 
 ### Indexing crashes mid-run
 
-Corrupted PDFs can cause native library crashes. The pipeline pre-validates with pdfplumber, but some malformed files pass validation. Re-run indexing — successfully indexed files are skipped, so only failed ones are retried.
+Corrupted PDFs can cause native library crashes. The pipeline pre-validates with pdfplumber, but some malformed files pass validation. Re-run indexing - successfully indexed files are skipped, so only failed ones are retried.
 
 Check which files failed:
 ```bash
@@ -374,7 +374,7 @@ docker exec -it rag_system python /app/rag_system/reindex_missing.py --dry-run
 1. Reduce workers: `INDEXING_WORKERS=1`
 2. Use a smaller LLM: `LLM_MODEL=qwen2.5:7b`
 3. Disable image captioning: `IMAGE_MIN_WIDTH=99999`
-4. After vision model runs, the system automatically unloads it and waits 20 s before loading the embedding model — this is intentional
+4. After vision model runs, the system automatically unloads it and waits 20 s before loading the embedding model - this is intentional
 
 ### Indexing is slow
 
@@ -400,7 +400,7 @@ curl -X POST "http://localhost:8000/v1/index?force=true" \
 
 ## Development
 
-The `./rag_system` directory is live-mounted into the container — edit any `.py` file and restart to apply (no rebuild needed):
+The `./rag_system` directory is live-mounted into the container - edit any `.py` file and restart to apply (no rebuild needed):
 
 ```bash
 docker compose restart rag
@@ -431,11 +431,11 @@ RAG Implementation V2/
 ├── logs/                       # Rotating logs + query analytics
 ├── qdrant_storage/             # Qdrant persistence (mounted)
 └── rag_system/
-    ├── config.py               # Central config — all env vars with defaults
+    ├── config.py               # Central config - all env vars with defaults
     ├── main.py                 # CLI entry point (index / serve / query)
     ├── reindex_missing.py      # Coverage report + retry tool
     ├── api/
-    │   ├── server.py           # FastAPI app — all endpoints
+    │   ├── server.py           # FastAPI app - all endpoints
     │   ├── app.html            # Web UI (single-file, no build step)
     │   └── auth.py             # Session/API-key auth (SQLite-backed)
     ├── generation/
@@ -468,7 +468,7 @@ The only three folders you need to preserve the full system state:
 | `qdrant_storage/` | All embedded vectors (30 K+ chunks) |
 | `db/` | Indexing tracker (which files are indexed) |
 
-The Docker image itself is stateless — all state lives in these mounted folders.
+The Docker image itself is stateless - all state lives in these mounted folders.
 
 ---
 
@@ -518,7 +518,7 @@ We welcome contributions! Here's how to get started.
 ### Code guidelines
 
 - **Python style**: Follow PEP 8. Aim for clarity over brevity.
-- **Type hints**: Use them liberally — they improve IDE support and catch bugs early.
+- **Type hints**: Use them liberally - they improve IDE support and catch bugs early.
 - **Logging**: Use the structured logging in `config.py`; avoid bare `print()` statements.
 - **Docstrings**: Keep them concise. Focus on the *why*, not the what (code should be self-documenting).
 - **Testing**: Add tests for any new retrieval/indexing logic. Run with:
@@ -545,7 +545,7 @@ We welcome contributions! Here's how to get started.
    git checkout -b feature/my-improvement
    ```
 
-2. **Make your changes** — keep commits focused and atomic
+2. **Make your changes** - keep commits focused and atomic
 
 3. **Test thoroughly**
    - Manual tests via the web UI or API
@@ -573,7 +573,7 @@ We welcome contributions! Here's how to get started.
 
 ## License
 
-[Specify your license here — e.g., MIT, Apache 2.0, or proprietary]
+[Specify your license here - e.g., MIT, Apache 2.0, or proprietary]
 
 ---
 

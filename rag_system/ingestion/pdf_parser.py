@@ -1,5 +1,5 @@
 """
-pdf_parser.py — Per-page PDF parsing using PyMuPDF.
+pdf_parser.py - Per-page PDF parsing using PyMuPDF.
 
 For each page this module determines:
   - Whether the page has a native text layer or is scanned (image-only).
@@ -28,7 +28,7 @@ import fitz  # PyMuPDF
 # Silence MuPDF's C-level warnings ("format error: non-page object in page tree"
 # etc.) which are printed directly to stderr and cannot be suppressed via Python
 # logging. We redirect stderr around the noisy calls.
-fitz.TOOLS.mupdf_display_errors(False)   # PyMuPDF ≥ 1.18 — suppress MuPDF errors
+fitz.TOOLS.mupdf_display_errors(False)   # PyMuPDF ≥ 1.18 - suppress MuPDF errors
 
 
 @contextmanager

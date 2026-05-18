@@ -1,10 +1,10 @@
 """
-image_captioner.py — Deep image understanding via qwen2.5vl (Ollama).
+image_captioner.py - Deep image understanding via qwen2.5vl (Ollama).
 
 This module sends each extracted image to the locally running qwen2.5vl
 vision-language model and receives a detailed Italian-language caption.
 
-The caption is designed to be highly descriptive — not just "a map" but
+The caption is designed to be highly descriptive - not just "a map" but
 a full contextual description of what the map shows, including:
   - Geographic area, roads, boundaries
   - Legend items and their meaning
@@ -79,7 +79,7 @@ def _resize_image(img_bytes: bytes, max_dim: int = None) -> bytes:
         img = Image.open(io.BytesIO(img_bytes))
         w, h = img.size
         if w * h > 200_000_000:
-            logger.warning("Image too large (%dx%d = %dMP) — skipping caption", w, h, w*h//1_000_000)
+            logger.warning("Image too large (%dx%d = %dMP) - skipping caption", w, h, w*h//1_000_000)
             return img_bytes  # return original unchanged
         img = img.convert("RGB")
         w, h = img.size
@@ -115,7 +115,7 @@ def caption_image(img_bytes: bytes, context: str = "") -> Optional[str]:
     resized = _resize_image(img_bytes)
     b64_img = base64.b64encode(resized).decode("utf-8")
 
-    # Build user prompt — include context if provided
+    # Build user prompt - include context if provided
     user_prompt = _CAPTION_USER_PROMPT
     if context:
         user_prompt = (
@@ -141,11 +141,11 @@ def caption_image(img_bytes: bytes, context: str = "") -> Optional[str]:
         },
     }
 
-    # Circuit breaker — bail immediately if vision model is known-unavailable
+    # Circuit breaker - bail immediately if vision model is known-unavailable
     if _circuit_open:
         return None
 
-    # Retry with backoff — Ollama may return 500 under VRAM pressure
+    # Retry with backoff - Ollama may return 500 under VRAM pressure
     max_retries = 4
     wait        = 5.0
     for attempt in range(1, max_retries + 1):
@@ -155,7 +155,7 @@ def caption_image(img_bytes: bytes, context: str = "") -> Optional[str]:
 
             if resp.status_code == 500:
                 logger.warning(
-                    "Ollama 500 on caption (attempt %d/%d) — waiting %.0fs…",
+                    "Ollama 500 on caption (attempt %d/%d) - waiting %.0fs…",
                     attempt, max_retries, wait,
                 )
                 time.sleep(wait)
@@ -166,13 +166,13 @@ def caption_image(img_bytes: bytes, context: str = "") -> Optional[str]:
             caption = resp.json().get("message", {}).get("content", "").strip()
             if caption:
                 logger.debug("Caption generated (%d chars)", len(caption))
-            # Success — reset circuit breaker counter
+            # Success - reset circuit breaker counter
             _consecutive_failures = 0
             return caption if caption else None
 
         except httpx.TimeoutException:
             logger.warning(
-                "qwen2.5vl caption timeout (attempt %d/%d) — waiting %.0fs…",
+                "qwen2.5vl caption timeout (attempt %d/%d) - waiting %.0fs…",
                 attempt, max_retries, wait,
             )
             time.sleep(wait)
@@ -183,12 +183,12 @@ def caption_image(img_bytes: bytes, context: str = "") -> Optional[str]:
             time.sleep(wait)
             wait = min(wait * 2, 60.0)
 
-    # All retries exhausted — update circuit breaker
+    # All retries exhausted - update circuit breaker
     _consecutive_failures += 1
     if _consecutive_failures >= _CIRCUIT_BREAKER_THRESHOLD:
         _circuit_open = True
         logger.error(
-            "Vision model returned 500 on %d consecutive attempts — "
+            "Vision model returned 500 on %d consecutive attempts - "
             "disabling image captioning for this run. "
             "Pull the model with: ollama pull %s",
             _consecutive_failures, config.VISION_MODEL,

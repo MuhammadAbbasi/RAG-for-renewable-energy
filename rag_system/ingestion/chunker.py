@@ -1,5 +1,5 @@
 """
-chunker.py — Semantic, sentence-aware text chunking (Italian-optimised).
+chunker.py - Semantic, sentence-aware text chunking (Italian-optimised).
 
 Converts processed page content into LangChain Document objects ready for
 embedding. Each document carries rich metadata so Qdrant can filter results
@@ -90,9 +90,9 @@ def chunk_page(page: PageContent) -> list[Document]:
 
     Processing order:
       1. Native text  (content_type="text")
-      2. OCR text     (content_type="ocr")      — if page was scanned
-      3. Tables       (content_type="table")    — one Document per table
-      4. Img captions (content_type="image_caption") — one Document per image
+      2. OCR text     (content_type="ocr")      - if page was scanned
+      3. Tables       (content_type="table")    - one Document per table
+      4. Img captions (content_type="image_caption") - one Document per image
     """
     docs: list[Document] = []
 
@@ -106,7 +106,7 @@ def chunk_page(page: PageContent) -> list[Document]:
         meta = _make_metadata(page, content_type="ocr")
         docs.extend(_split_text(page.ocr_text, meta))
 
-    # ── 3. Tables (each table is a separate Document — not further split) ─────
+    # ── 3. Tables (each table is a separate Document - not further split) ─────
     for tbl_idx, table_md in enumerate(page.tables):
         if len(table_md.strip()) < config.CHUNK_MIN_CHARS:
             continue
@@ -118,7 +118,7 @@ def chunk_page(page: PageContent) -> list[Document]:
         if not caption or len(caption.strip()) < config.CHUNK_MIN_CHARS:
             continue
         meta = _make_metadata(page, content_type="image_caption", chunk_index=cap_idx)
-        # Captions are already concise — split only if very long
+        # Captions are already concise - split only if very long
         docs.extend(_split_text(caption, meta))
 
     return docs

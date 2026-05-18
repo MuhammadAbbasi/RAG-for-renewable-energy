@@ -1,8 +1,8 @@
 """
-schema.py — Dataclasses for wiki extracted project records.
+schema.py - Dataclasses for wiki extracted project records.
 
-ProjectRecord   — one per project folder (merged from all its PDFs)
-DocExtraction   — one per PDF file (raw extracted JSON, for audit)
+ProjectRecord   - one per project folder (merged from all its PDFs)
+DocExtraction   - one per PDF file (raw extracted JSON, for audit)
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from typing import Optional
 class ProjectRecord:
     """
     Aggregated structured data for one energy project (one folder in data/).
-    Fields are merged across all PDF documents in the folder — the most
+    Fields are merged across all PDF documents in the folder - the most
     specific / highest-confidence value wins on each update.
     """
     project_id:      str                       # folder name, e.g. "9579 - Sicilia"

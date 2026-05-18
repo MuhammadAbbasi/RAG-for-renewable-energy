@@ -1,10 +1,10 @@
 """
-store.py — SQLite persistence for wiki project records.
+store.py - SQLite persistence for wiki project records.
 
 Database: <DB_DIR>/wiki.db
 Tables:
-  projects        — one row per project_id (merged from all PDFs)
-  doc_extractions — one row per (project_id, filename) audit trail
+  projects        - one row per project_id (merged from all PDFs)
+  doc_extractions - one row per (project_id, filename) audit trail
 
 Merge policy
 ------------
@@ -141,7 +141,7 @@ def upsert_project(record: ProjectRecord):
         ).fetchone()
 
         if existing is None:
-            # First insert — straight write
+            # First insert - straight write
             d = record.to_dict()
             d["last_updated"] = now
             cols   = ", ".join(d.keys())
@@ -151,7 +151,7 @@ def upsert_project(record: ProjectRecord):
                 list(d.values()),
             )
         else:
-            # Merge — preserve existing data, fill blanks, union lists
+            # Merge - preserve existing data, fill blanks, union lists
             ex = dict(existing)
             updates = {
                 "project_name":    _coalesce(ex["project_name"],    record.project_name),

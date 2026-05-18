@@ -1,5 +1,5 @@
 """
-vector_store.py — Qdrant client wrapper for storing and searching chunks.
+vector_store.py - Qdrant client wrapper for storing and searching chunks.
 
 Design:
   - One Qdrant collection per project (e.g. "rag_project_14413_sicilia").
@@ -30,7 +30,7 @@ from rag_system import config
 
 logger = logging.getLogger(__name__)
 
-# Singleton client — shared across the process
+# Singleton client - shared across the process
 _client: Optional[QdrantClient] = None
 
 
@@ -181,7 +181,7 @@ def search(
     all_results = []
     for coll in collections:
         try:
-            # qdrant-client ≥ 2.x removed client.search() — use query_points instead.
+            # qdrant-client ≥ 2.x removed client.search() - use query_points instead.
             # query_points returns a QueryResponse with a .points list of ScoredPoint.
             response = client.query_points(
                 collection_name = coll,

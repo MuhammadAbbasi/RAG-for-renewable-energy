@@ -1,5 +1,5 @@
 """
-priority.py — Query-priority gate for the indexing pipeline.
+priority.py - Query-priority gate for the indexing pipeline.
 
 How it works
 ------------
@@ -11,7 +11,7 @@ callers fighting over the same GPU.
 
 For true parallel execution (both models resident at the same time), set
 OLLAMA_NUM_PARALLEL=2 and OLLAMA_MAX_LOADED_MODELS=2 in the Ollama process
-environment — see docker-compose.yml comments.
+environment - see docker-compose.yml comments.
 
 Thread safety
 -------------

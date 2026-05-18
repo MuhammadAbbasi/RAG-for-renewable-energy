@@ -1,5 +1,5 @@
 """
-wiki/ — Structured knowledge extraction layer for RAG.
+wiki/ - Structured knowledge extraction layer for RAG.
 
 Extracts structured project records from PDF documents using an LLM,
 stores them in a SQLite database, and routes aggregative queries

@@ -1,10 +1,10 @@
 """
-router.py — Query router: wiki SQL vs RAG vector search.
+router.py - Query router: wiki SQL vs RAG vector search.
 
 Routes questions to the appropriate backend:
-  WIKI  — aggregative, comparative, list, count, filter-by-value questions
-  RAG   — explanatory, detail, document-content questions
-  HYBRID— questions that need both (project detail + context)
+  WIKI  - aggregative, comparative, list, count, filter-by-value questions
+  RAG   - explanatory, detail, document-content questions
+  HYBRID- questions that need both (project detail + context)
 
 Routing is pattern-based (fast, no extra LLM call). The patterns cover
 Italian and English phrasing since users may query in either language.
@@ -26,7 +26,7 @@ class QueryRoute(str, Enum):
 # Pattern lists
 # ─────────────────────────────────────────────────────────────────────────────
 
-# WIKI patterns — aggregative / structured / list / compare
+# WIKI patterns - aggregative / structured / list / compare
 _WIKI_PATTERNS = [
     # Count
     r"\bquanti\s+progetti\b",
@@ -100,7 +100,7 @@ _WIKI_PATTERNS = [
     r"\bhow\s+many\s+(are|were)\s+(approved|ongoing)\b",
 ]
 
-# RAG patterns — explanatory, content-lookup, document-specific, and
+# RAG patterns - explanatory, content-lookup, document-specific, and
 # technical/construction queries that the wiki schema cannot answer.
 _RAG_PATTERNS = [
     r"\bspiega\b",

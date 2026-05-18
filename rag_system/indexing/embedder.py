@@ -1,17 +1,17 @@
 """
-embedder.py — Text embedding via bge-m3 (Ollama).
+embedder.py - Text embedding via bge-m3 (Ollama).
 
 bge-m3 is a state-of-the-art multilingual embedding model that produces
 1024-dimensional dense vectors. It handles Italian text excellently and
 is already running in your local Ollama instance.
 
 Speed strategy:
-  1. Batch API  — POST /api/embed with {"input": [list_of_texts]}
+  1. Batch API  - POST /api/embed with {"input": [list_of_texts]}
                   Sends all chunks in ONE HTTP round-trip (~10× faster than
                   per-chunk calls for a typical 200-chunk PDF).
                   Requires Ollama ≥ 0.1.30. Detected automatically at runtime.
 
-  2. Per-chunk  — Legacy POST /api/embeddings, used as fallback if the batch
+  2. Per-chunk  - Legacy POST /api/embeddings, used as fallback if the batch
                   endpoint returns 404.
 
 Retry-with-backoff handles transient Ollama 500 errors (GPU model swaps).
@@ -40,7 +40,7 @@ _BATCH_SIZE = 64
 _MAX_RETRIES    = 8
 _RETRY_BASE_SEC = 8.0   # 8 → 16 → 32 → 64 → 120s (capped)
 
-# Runtime feature flag — set to False after first 404 on /api/embed
+# Runtime feature flag - set to False after first 404 on /api/embed
 _batch_api_supported: Optional[bool] = None
 
 
@@ -66,7 +66,7 @@ def _embed_batch(texts: list[str]) -> Optional[list[list[float]]]:
 
             if resp.status_code == 404:
                 logger.info(
-                    "Batch embed endpoint not available (Ollama < 0.1.30) — "
+                    "Batch embed endpoint not available (Ollama < 0.1.30) - "
                     "falling back to per-chunk mode"
                 )
                 _batch_api_supported = False
@@ -74,7 +74,7 @@ def _embed_batch(texts: list[str]) -> Optional[list[list[float]]]:
 
             if resp.status_code == 500:
                 logger.warning(
-                    "Ollama 500 on batch embed (attempt %d/%d) — waiting %.0fs…",
+                    "Ollama 500 on batch embed (attempt %d/%d) - waiting %.0fs…",
                     attempt, _MAX_RETRIES, wait,
                 )
                 time.sleep(wait)
@@ -92,23 +92,23 @@ def _embed_batch(texts: list[str]) -> Optional[list[list[float]]]:
                     len(texts), len(vectors), len(vectors[0]),
                 )
                 return vectors
-            # Unexpected shape — fall back
+            # Unexpected shape - fall back
             logger.warning("Unexpected batch embed response shape: %s", list(data.keys()))
             _batch_api_supported = False
             return None
 
         except httpx.TimeoutException:
             logger.warning(
-                "Batch embed timeout (attempt %d/%d, %d texts) — waiting %.0fs…",
+                "Batch embed timeout (attempt %d/%d, %d texts) - waiting %.0fs…",
                 attempt, _MAX_RETRIES, len(texts), wait,
             )
             time.sleep(wait)
             wait = min(wait * 2, 120.0)
 
         except httpx.HTTPStatusError as exc:
-            # 4xx/5xx from Ollama — log and retry
+            # 4xx/5xx from Ollama - log and retry
             logger.warning(
-                "Ollama HTTP %d on batch embed (attempt %d/%d) — waiting %.0fs…",
+                "Ollama HTTP %d on batch embed (attempt %d/%d) - waiting %.0fs…",
                 exc.response.status_code, attempt, _MAX_RETRIES, wait,
             )
             time.sleep(wait)
@@ -156,9 +156,9 @@ def _embed_single_with_retry(text: str) -> Optional[list[float]]:
             wait = min(wait * 2, 120.0)
 
         except httpx.HTTPStatusError as exc:
-            # 4xx/5xx from Ollama — log and retry (model may be reloading)
+            # 4xx/5xx from Ollama - log and retry (model may be reloading)
             logger.warning(
-                "Ollama HTTP %d on embed (attempt %d/%d) — waiting %.0fs…",
+                "Ollama HTTP %d on embed (attempt %d/%d) - waiting %.0fs…",
                 exc.response.status_code, attempt, _MAX_RETRIES, wait,
             )
             time.sleep(wait)
@@ -192,7 +192,7 @@ def _embed_single_fallback(text: str) -> Optional[list[float]]:
                 resp = client.post(_EMBED_URL_SINGLE, json=payload)
             if resp.status_code == 500:
                 logger.warning(
-                    "Ollama 500 on fallback embed (attempt %d/3) — waiting %.0fs…",
+                    "Ollama 500 on fallback embed (attempt %d/3) - waiting %.0fs…",
                     attempt, wait,
                 )
                 time.sleep(wait)
@@ -226,7 +226,7 @@ def embed_text(text: str):
         return None
     vec = _embed_single_with_retry(text)
     if vec is None and config.EMBED_MODEL_FALLBACK:
-        logger.warning("Primary embed failed — trying fallback model")
+        logger.warning("Primary embed failed - trying fallback model")
         vec = _embed_single_fallback(text)
     return vec
 
@@ -260,7 +260,7 @@ def embed_texts(texts):
         # This lets Ollama serve the LLM without fighting the embedding model.
         if not QUERY_GATE.is_set():
             logger.info(
-                "Embedding batch %d paused — waiting for active query to finish…",
+                "Embedding batch %d paused - waiting for active query to finish…",
                 i // _BATCH_SIZE,
             )
             QUERY_GATE.wait(timeout=300)   # wait up to 5 min, then proceed anyway

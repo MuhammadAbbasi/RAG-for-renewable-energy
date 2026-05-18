@@ -1,5 +1,5 @@
 """
-config.py — Central configuration for the Offline RAG System.
+config.py - Central configuration for the Offline RAG System.
 All settings are controlled here or via environment variables / .env file.
 """
 
@@ -28,7 +28,7 @@ SKIPPED_PROJECTS_CSV = LOGS_DIR / "skipped_projects.csv"
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 # Primary LLM for answer generation.
-# qwen3.6:35b-a3b — best quality, runs via Ollama (fits in 64 GB RAM).
+# qwen3.6:35b-a3b - best quality, runs via Ollama (fits in 64 GB RAM).
 # Falls back to qwen3.5:9b or qwen2.5:7b when VRAM is tight.
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen3.6:35b-a3b")
 
@@ -98,7 +98,7 @@ FORMAT_CONTEXT_MAX_CHARS = int(os.getenv("FORMAT_CONTEXT_MAX_CHARS", "36000"))
 # ─────────────────────────────────────────────
 # Set WIKI_ENABLED=false to disable wiki extraction (RAG-only mode)
 WIKI_ENABLED        = os.getenv("WIKI_ENABLED", "true").lower() == "true"
-# Model used for extraction — can be a smaller/faster model than LLM_MODEL
+# Model used for extraction - can be a smaller/faster model than LLM_MODEL
 # e.g. "qwen2.5:7b" for speed, or leave blank to use LLM_MODEL
 WIKI_EXTRACT_MODEL  = os.getenv("WIKI_EXTRACT_MODEL", "") or os.getenv("LLM_MODEL", "qwen2.5:7b")
 # Number of pages to read from the start of each PDF for extraction
@@ -122,9 +122,9 @@ IMAGE_MIN_HEIGHT = int(os.getenv("IMAGE_MIN_HEIGHT", "80"))
 # ─────────────────────────────────────────────
 # Number of parallel project workers.
 # GPU ops (OCR, captioning) are serialised by a shared lock so VRAM is safe.
-# • 2 — recommended default (one worker overlaps CPU work with another's GPU)
-# • 4 — text-only datasets with no OCR/captioning bottleneck
-# • 1 — use when debugging or very tight on VRAM
+# • 2 - recommended default (one worker overlaps CPU work with another's GPU)
+# • 4 - text-only datasets with no OCR/captioning bottleneck
+# • 1 - use when debugging or very tight on VRAM
 INDEXING_WORKERS = int(os.getenv("INDEXING_WORKERS", "2"))
 
 # Whether to re-index a file even if it hasn't changed (force mode)
