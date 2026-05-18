@@ -1,0 +1,99 @@
+services:
+
+  # ── Qdrant vector database ──────────────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # REST API + Qdrant Web UI (clickable in Docker Desktop)
+      - "6334:6334"   # gRPC (optional)
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__LOG_LEVEL=INFO
+    healthcheck:
+      # TCP port check — works in Qdrant's minimal Debian image (no curl/wget present)
+      test: ["CMD-SHELL", "bash -c ':>/dev/tcp/localhost/6333'"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  # ── RAG system (API server + indexing) ─────────────────────────────────────
+  #
+  # This single container handles both roles:
+  #   • Always running  →  FastAPI OpenAI-compatible API on port 8000
+  #   • On demand       →  indexing pipeline (run from host or exec into container)
+  #
+  # GPU is passed through so EasyOCR runs on the NVIDIA 4060 Ti.
+  # Ollama stays on the HOST and is reached via host.docker.internal.
+  # ──────────────────────────────────────────────────────────────────────────
+  rag:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag_system
+    restart: unless-stopped
+    ports:
+      - "8000:8000"   # OpenAI-compatible API (clickable in Docker Desktop)
+    volumes:
+      - ./rag_system:/app/rag_system  # Live code mount — changes take effect on restart, no rebuild needed
+      - ./data:/app/data              # PDF project folders  (read by indexer)
+      - ./db:/app/db                  # SQLite tracker        (read-write)
+      - ./logs:/app/logs              # Log files             (read-write)
+    environment:
+      # ── Qdrant: reach via Docker internal network ──────────────────────────
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      # ── Ollama: runs on HOST, not inside Docker ────────────────────────────
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # ── Models ────────────────────────────────────────────────────────────
+      - LLM_MODEL=qwen3.6:35b-a3b
+      - VISION_MODEL=qwen2.5vl:latest
+      - EMBED_MODEL=bge-m3:latest
+      - EMBED_MODEL_FALLBACK=nomic-embed-text:latest
+      # ── Parallel model loading (keeps LLM + embedding model both resident) ──
+      # These env vars must ALSO be set on the HOST where Ollama runs.
+      # Windows PowerShell:
+      #   $env:OLLAMA_NUM_PARALLEL=2; $env:OLLAMA_MAX_LOADED_MODELS=2; ollama serve
+      # Linux / macOS:
+      #   OLLAMA_NUM_PARALLEL=2 OLLAMA_MAX_LOADED_MODELS=2 ollama serve
+      # Or add them to Ollama's systemd unit / launchd plist.
+      # With 64 GB RAM this is safe: bge-m3 (~600 MB) + qwen3.6 (~22 GB) = ~23 GB total.
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=2
+      # ── API ───────────────────────────────────────────────────────────────
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    extra_hosts:
+      # host.docker.internal resolves to the host on Windows/Mac Docker Desktop.
+      # The line below makes it also work on Linux hosts.
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    # ── GPU passthrough ───────────────────────────────────────────────────────
+    # Grants access to the NVIDIA GPU so EasyOCR uses CUDA inside the container.
+    #
+    # Windows (Docker Desktop):
+    #   • Settings → General → "Use WSL 2 based engine" must be ON
+    #   • Settings → Resources → GPU must be ON
+    #   • No extra software needed — Docker Desktop handles it automatically.
+    #
+    # Linux:
+    #   • Install NVIDIA Container Toolkit first:
+    #       https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

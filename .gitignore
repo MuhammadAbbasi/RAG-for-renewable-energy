@@ -1,0 +1,115 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.code-workspace
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Data and documents
+data/
+db/
+*.pdf
+*.docx
+*.xlsx
+
+# Vector database
+qdrant_storage/
+vector_db/
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Cache
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+graphify-out/cache/
+
+# Temp files
+*.tmp
+*.bak
+*.backup
+~*
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# OS files
+.DS_Store
+Thumbs.db
+.Thumbs.db
+desktop.ini
+
+# Node (if applicable)
+node_modules/
+npm-debug.log
+
+# Package locks (optional — include if you want consistency)
+# Uncomment if you want to track lock files:
+# poetry.lock
+# pipenv.lock
+
+# Test coverage
+htmlcov/
+.coverage
+.coverage.*
+.coveragerc
+
+# Type checking
+.mypy.cache/
+.dmypy.json
+dmypy.json
+
+# Database backups
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary output
+*.tmp.*
+temp/
+tmp/
