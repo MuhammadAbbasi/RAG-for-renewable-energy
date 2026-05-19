@@ -22,7 +22,7 @@ pytesseract>=0.3.10      # requires tesseract-ocr binary: winget install UB-Mann
 # Do NOT add surya-ocr — it hard-pins Pillow<11 which cannot build on Python 3.14
 
 # ── Vector database ──────────────────────────────────────────────────────────
-qdrant-client>=2.0.0          # query_points() API (search() removed in 2.x)
+qdrant-client>=1.7.0          # Vector database client (2.0+ not available for Python 3.13 yet)
 
 # ── API server ───────────────────────────────────────────────────────────────
 fastapi>=0.111.0

@@ -478,6 +478,14 @@ def run_indexing(
     _already_indexed = sum(1 for _, pdf in _all_pdfs_flat if tracker.is_already_indexed(pdf))
     _to_process      = _total_pdfs - _already_indexed
 
+    # Update API progress state if running via server
+    try:
+        from rag_system.api.server import _indexing_state
+        _indexing_state["total_files"] = _total_pdfs
+        _indexing_state["total_projects"] = len(project_folders)
+    except (ImportError, AttributeError):
+        pass
+
     workers = max(1, config.INDEXING_WORKERS)
     logger.info("═" * 60)
     logger.info("  INDEXING RUN SUMMARY")
@@ -504,6 +512,14 @@ def run_indexing(
     def _process_project(project_id: str, folder: Path, valid_pdfs: list[Path]):
         """Process all PDFs in one project folder. Runs in a worker thread."""
         logger.info("\n══ Project: %s ══", project_id)
+
+        # Update projects processed counter
+        try:
+            from rag_system.api.server import _indexing_state
+            with _stats_lock:
+                _indexing_state["projects_processed"] += 1
+        except (ImportError, AttributeError):
+            pass
 
         _, _, _, empty_names = _validate_project_folder(folder)
         if empty_names:
@@ -541,6 +557,12 @@ def run_indexing(
                     with _stats_lock:
                         stats["processed_pdfs"] += 1
                         stats["total_chunks"]   += chunk_count
+                        # Update API progress state
+                        try:
+                            from rag_system.api.server import _indexing_state
+                            _indexing_state["files_processed"] = global_idx
+                        except (ImportError, AttributeError):
+                            pass
                     logger.info(
                         "  \u2514\u2500 Done [PDF %d/%d] -- %d chunks  (processed %d/%d)",
                         global_idx, _total_pdfs, chunk_count,

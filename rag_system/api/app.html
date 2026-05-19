@@ -7,7 +7,7 @@
 <style>
 /* ── Reset & Base ──────────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:#0d1117;color:#e6edf3}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:var(--bg-base);color:var(--text-main)}
 button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
 input,select,textarea{font:inherit;color:inherit}
 a{color:inherit;text-decoration:none}
@@ -17,6 +17,26 @@ a{color:inherit;text-decoration:none}
 
 /* ── CSS Variables ─────────────────────────────────────────────────────── */
 :root{
+  --accent:#0066cc;
+  --accent-dim:#e6f2ff;
+  --bg-base:#ffffff;
+  --bg-panel:#f9fafb;
+  --bg-card:#ffffff;
+  --bg-hover:#f3f4f6;
+  --border:#e5e7eb;
+  --text-main:#111827;
+  --text-muted:#6b7280;
+  --text-dim:#9ca3af;
+  --green:#10b981;
+  --red:#ef4444;
+  --yellow:#f59e0b;
+  --bar-h:54px;
+  --sidebar-w:240px;
+  --rpanel-w:320px;
+}
+
+/* Dark theme */
+:root[data-theme="dark"]{
   --accent:#4f8ef7;
   --accent-dim:#1d3f7a;
   --bg-base:#0d1117;
@@ -30,9 +50,6 @@ a{color:inherit;text-decoration:none}
   --green:#3fb950;
   --red:#f85149;
   --yellow:#d29922;
-  --bar-h:54px;
-  --sidebar-w:240px;
-  --rpanel-w:320px;
 }
 
 /* ── Login Screen ──────────────────────────────────────────────────────── */
@@ -130,7 +147,7 @@ a{color:inherit;text-decoration:none}
 }
 .sb-new-btn:hover{opacity:.85}
 .sb-section{font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:0 6px;margin-bottom:6px}
-.sb-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;margin-bottom:16px}
+.sb-list{flex:2;overflow-y:auto;display:flex;flex-direction:column;gap:2px;margin-bottom:16px}
 .sb-item{
   padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;
   color:var(--text-muted);transition:background .1s,color .1s;
@@ -141,7 +158,7 @@ a{color:inherit;text-decoration:none}
 .sb-item .icon{font-size:14px;flex-shrink:0}
 .sb-divider{height:1px;background:var(--border);margin:8px 4px}
 .sb-proj-label{font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:0 6px;margin:10px 0 6px}
-#project-list{display:flex;flex-direction:column;gap:2px}
+#project-list{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto}
 .proj-item{
   padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;
   color:var(--text-muted);transition:background .1s;
@@ -151,6 +168,16 @@ a{color:inherit;text-decoration:none}
 .proj-item:hover{background:var(--bg-hover);color:var(--text-main)}
 .proj-item.active{background:var(--accent-dim);color:var(--accent)}
 .proj-dot{width:8px;height:8px;border-radius:50%;background:var(--accent-dim);border:1.5px solid var(--accent);flex-shrink:0}
+
+/* ── Progress Bar ──────────────────────────────────────────────────────── */
+.progress-bar-container{
+  width:100%;height:6px;background:var(--bg-card);border:1px solid var(--border);
+  border-radius:3px;overflow:hidden;
+}
+.progress-bar-fill{
+  height:100%;background:var(--accent);transition:width .3s ease;
+  border-radius:2px;
+}
 
 /* ── Center Chat ───────────────────────────────────────────────────────── */
 #chat-area{
@@ -550,6 +577,7 @@ a{color:inherit;text-decoration:none}
   </div>
   <button class="tb-btn" id="admin-toggle-btn" onclick="toggleAdminPanel()" style="display:none">⚙ Admin</button>
   <button class="tb-btn" id="rp-toggle-btn" onclick="toggleRightPanel()">📊 Info</button>
+  <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambia tema">🌙 Tema</button>
   <button class="tb-btn tb-btn-logout" onclick="doLogout()">Esci</button>
 </div>
 
@@ -643,6 +671,12 @@ a{color:inherit;text-decoration:none}
         <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);margin-bottom:8px">
           <div class="status-dot idle" id="index-status-dot"></div>
           <span id="index-status-txt">In attesa</span>
+        </div>
+        <div id="index-progress" style="display:none;margin-bottom:12px">
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-bar-fill" style="width:0%"></div>
+          </div>
+          <div id="progress-text" style="font-size:11px;color:var(--text-dim);margin-top:4px;text-align:center">Caricamento...</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
           <button class="index-btn" id="index-btn" onclick="triggerIndex()">▶ Avvia indicizzazione</button>
@@ -772,6 +806,14 @@ a{color:inherit;text-decoration:none}
 <div id="toast-wrap"></div>
 
 <script>
+// Apply theme immediately to prevent flash
+const _savedTheme = localStorage.getItem('rag_theme') || 'light';
+if(_savedTheme === 'dark'){
+  document.documentElement.setAttribute('data-theme', 'dark');
+}
+</script>
+
+<script>
 // ── State ──────────────────────────────────────────────────────────────────
 let _token      = localStorage.getItem('rag_token') || '';
 let _session    = null;
@@ -781,6 +823,7 @@ let _selectedProj = null;
 let _conversations = JSON.parse(localStorage.getItem('rag_convs') || '[]');
 let _currentConv  = null;
 let _adminOpen    = false;
+let _theme      = localStorage.getItem('rag_theme') || 'light';
 
 // ── Utils ──────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -972,6 +1015,7 @@ function doLogout(){
 
 // ── App bootstrap ──────────────────────────────────────────────────────────
 async function init(){
+  initTheme();
   const ok = await checkSession();
   if(ok){ showApp(); }
   // else: login screen already visible
@@ -979,6 +1023,16 @@ async function init(){
   $('login-pass').addEventListener('keydown', e=>{
     if(e.key==='Enter') doLogin();
   });
+}
+
+function initTheme(){
+  if(_theme === 'dark'){
+    document.documentElement.setAttribute('data-theme', 'dark');
+    $('theme-toggle-btn').textContent = '☀ Tema';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    $('theme-toggle-btn').textContent = '🌙 Tema';
+  }
 }
 
 function showApp(){
@@ -1014,6 +1068,18 @@ function toggleRightPanel(){
   const app = $('app');
   const hidden = app.classList.toggle('rp-hidden');
   $('rp-toggle-btn').classList.toggle('active', !hidden);
+}
+
+function toggleTheme(){
+  _theme = _theme === 'light' ? 'dark' : 'light';
+  localStorage.setItem('rag_theme', _theme);
+  if(_theme === 'dark'){
+    document.documentElement.setAttribute('data-theme', 'dark');
+    $('theme-toggle-btn').textContent = '☀ Tema';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    $('theme-toggle-btn').textContent = '🌙 Tema';
+  }
 }
 
 // ── Admin panel ────────────────────────────────────────────────────────────
@@ -1639,6 +1705,28 @@ async function triggerIndex(){
   }catch(e){toast('Errore: '+e.message,'err')}
 }
 
+function updateProgressBar(progress){
+  const progressText=$('progress-text');
+  if(!progress){
+    progressText.textContent='Inizializzazione...';
+    return;
+  }
+  const m=progress.match(/(\d+)\/(\d+)\s+projects\s*-\s*(\d+)\/(\d+)\s+files/i);
+  if(!m){
+    progressText.textContent=progress;
+    return;
+  }
+  const projCur=parseInt(m[1]);
+  const projTot=parseInt(m[2]);
+  const fileCur=parseInt(m[3]);
+  const fileTot=parseInt(m[4]);
+  const filePercent=fileTot>0?(fileCur/fileTot)*100:0;
+  const status=progress.includes('scanning')?'(scanning...)':'';
+
+  $('progress-bar-fill').style.width=filePercent+'%';
+  progressText.textContent=`${projCur}/${projTot} projects - ${fileCur}/${fileTot} files ${status}`;
+}
+
 async function pollIndexStatus(){
   clearInterval(_indexPollTimer);
   _indexPollTimer=setInterval(async()=>{
@@ -1651,8 +1739,15 @@ async function pollIndexStatus(){
       const running=d.status==='running';
       if(dot){ dot.className='status-dot '+(running?'active':'idle'); }
       if(txt){ txt.textContent=running?`In corso… ${d.progress||''}`:('Completato '+((d.finished_at||'')+'').substring(0,16)); }
+
+      if(running){
+        $('index-progress').style.display='block';
+        updateProgressBar(d.progress || d.message);
+      }
+
       if(!running){
         clearInterval(_indexPollTimer);
+        $('index-progress').style.display='none';
         const btn=$('index-btn');
         if(btn){ btn.disabled=false; btn.textContent='▶ Avvia indicizzazione'; }
         const dot=$('index-status-dot');

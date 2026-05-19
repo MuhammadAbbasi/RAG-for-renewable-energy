@@ -375,14 +375,29 @@ def get_stats(user: dict = Depends(require_user)):
 
 
 # Indexing status (simple in-memory flag)
-_indexing_state = {"running": False, "message": "In attesa", "started_at": None, "finished_at": None}
+_indexing_state = {
+    "running": False,
+    "message": "In attesa",
+    "started_at": None,
+    "finished_at": None,
+    "files_processed": 0,
+    "total_files": 0,
+    "projects_processed": 0,
+    "total_projects": 0,
+}
 
 
 @app.get("/v1/index/status")
 def indexing_status(user: dict = Depends(require_user)):
+    progress = ""
+    if _indexing_state["total_files"] > 0:
+        progress = f"{_indexing_state['projects_processed']}/{_indexing_state['total_projects']} projects - {_indexing_state['files_processed']}/{_indexing_state['total_files']} files"
+    elif _indexing_state["running"]:
+        progress = f"0/{_indexing_state.get('total_projects', 0)} projects - 0/{_indexing_state.get('total_files', 0)} files (scanning...)"
     return {
         "status":      "running" if _indexing_state["running"] else "idle",
         "message":     _indexing_state["message"],
+        "progress":    progress,
         "started_at":  _indexing_state.get("started_at"),
         "finished_at": _indexing_state.get("finished_at"),
     }
@@ -417,10 +432,14 @@ async def trigger_indexing(
     async def _run():
         from rag_system.indexing.pipeline import run_indexing
         from rag_system import config as _cfg
-        _indexing_state["running"]     = True
-        _indexing_state["started_at"]  = __import__('datetime').datetime.now().strftime("%Y-%m-%d %H:%M")
-        _indexing_state["finished_at"] = None
-        _indexing_state["message"] = f"In corso: {project_filter or 'tutti i progetti'}…"
+        _indexing_state["running"]           = True
+        _indexing_state["started_at"]        = __import__('datetime').datetime.now().strftime("%Y-%m-%d %H:%M")
+        _indexing_state["finished_at"]       = None
+        _indexing_state["message"]           = f"In corso: {project_filter or 'tutti i progetti'}…"
+        _indexing_state["files_processed"]   = 0
+        _indexing_state["projects_processed"] = 0
+        _indexing_state["total_files"]       = 0
+        _indexing_state["total_projects"]    = 0
         if req.force_reindex:
             _cfg.FORCE_REINDEX = True
         try:

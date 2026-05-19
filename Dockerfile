@@ -1,7 +1,7 @@
 # ── RAG System — CUDA-enabled Dockerfile ──────────────────────────────────────
 #
-# Base: python:3.11-slim  (clean, no conda conflicts)
-# CUDA: PyTorch CUDA 12.1 wheels — runtime CUDA libs bundled inside the wheel,
+# Base: python:3.13-slim  (clean, no conda conflicts)
+# CUDA: PyTorch CUDA 12.4 wheels — runtime CUDA libs bundled inside the wheel,
 #       so no nvidia/cuda base image is needed.
 # OCR:  EasyOCR with GPU (CRAFT + CRNN models pre-downloaded at build time)
 #
@@ -16,7 +16,7 @@
 #       https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
 # ──────────────────────────────────────────────────────────────────────────────
 
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # ── System packages ───────────────────────────────────────────────────────────
 # libgl1, libglib2.0-0  → required by OpenCV (used by EasyOCR)
@@ -34,18 +34,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# ── Step 1: PyTorch with CUDA 12.1 ───────────────────────────────────────────
+# ── Step 1: PyTorch with CUDA 12.4 ───────────────────────────────────────────
 # The CUDA wheel bundles its own runtime libs (libcublas, libcudnn, etc.)
 # so no cuda base image is needed.  ~2.5 GB download but cached by Docker.
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir \
-        torch==2.3.0 \
-        torchvision==0.18.0 \
-        --index-url https://download.pytorch.org/whl/cu121
+        torch==2.6.0 \
+        torchvision==0.21.0 \
+        --index-url https://download.pytorch.org/whl/cu124
 
 # ── Step 2: EasyOCR (primary GPU OCR engine) ─────────────────────────────────
 # torch is already installed above; EasyOCR finds it automatically.
-RUN pip install --no-cache-dir easyocr==1.7.1 numpy
+RUN pip install --no-cache-dir easyocr==1.7.2 numpy opencv-python-headless pillow
 
 # ── Step 3: Pre-download EasyOCR models at build time ────────────────────────
 # Models (~300 MB) are stored in /root/.EasyOCR inside the image so the first
