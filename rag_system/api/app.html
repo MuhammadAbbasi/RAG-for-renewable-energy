@@ -440,6 +440,32 @@ a{color:inherit;text-decoration:none}
   box-shadow:0 4px 16px rgba(0,0,0,.3);
 }
 .hint-process.show{display:block}
+/* ── /review wizard ──────────────────────────────────────────────────── */
+.review-modal{width:560px;max-width:96vw}
+.review-modal h3{font-size:17px;margin-bottom:5px}
+.review-modal .sub{font-size:12px;color:var(--text-muted);margin-bottom:18px}
+.drop-zone{
+  border:2px dashed var(--border);border-radius:8px;padding:22px 16px;
+  text-align:center;cursor:pointer;transition:all .2s;margin-bottom:4px;
+  color:var(--text-muted);font-size:13px;
+}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.drop-zone .drop-icon{font-size:28px;margin-bottom:6px}
+.drop-zone .file-chosen{color:var(--green);font-weight:600;font-size:13px}
+.hint-review{
+  display:none;position:absolute;bottom:calc(100% + 8px);left:0;right:0;
+  background:var(--bg-panel);border:1px solid var(--green);border-radius:8px;
+  padding:10px 14px;font-size:12px;color:var(--text-muted);z-index:50;
+  box-shadow:0 4px 16px rgba(0,0,0,.3);
+}
+.hint-review.show{display:block}
+.followup-btns{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.followup-btn{
+  padding:8px 14px;border:1px solid var(--accent);border-radius:6px;
+  font-size:12px;color:var(--accent);background:var(--accent-dim);
+  cursor:pointer;text-align:left;transition:all .15s;
+}
+.followup-btn:hover{background:var(--accent);color:#fff}
 .hint-process strong{color:var(--accent)}
 .toast.err{background:#3a1a1a;border:1px solid var(--red);color:var(--red)}
 .toast.info{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent)}
@@ -638,6 +664,7 @@ a{color:inherit;text-decoration:none}
           <button class="starter-btn" onclick="sendStarter('Quali sono le date e le scadenze importanti?')">Date e scadenze</button>
           <button class="starter-btn" onclick="sendStarter('Riassumi i documenti disponibili')">Riassunto documenti</button>
           <button class="starter-btn" onclick="openProcessModal(null)" style="background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:600">🔍 /process — Analisi progetto</button>
+          <button class="starter-btn" onclick="openReviewModal()" style="background:#1a3a1a;border-color:var(--green);color:var(--green);font-weight:600">📄 /review — Revisiona una proposta</button>
         </div>
       </div>
     </div>
@@ -646,6 +673,9 @@ a{color:inherit;text-decoration:none}
         <div style="position:relative;flex:1;display:flex;flex-direction:column">
   <div class="hint-process" id="process-hint">
     Premi <strong>Enter</strong> per aprire il wizard di analisi progetto — ti farò alcune domande poi genererò un rapporto critico completo.
+  </div>
+  <div class="hint-review" id="review-hint">
+    Premi <strong>Enter</strong> per caricare un documento — lo confronterò con tutti i progetti nel database e ti dirò cosa cambiare.
   </div>
   <textarea id="user-input" rows="1" placeholder="Scrivi una domanda… (digita /process per analisi progetto)" onkeydown="handleKey(event)" oninput="handleInputHint(this);autoResize(this)"></textarea>
 </div>
@@ -835,6 +865,59 @@ a{color:inherit;text-decoration:none}
     <div class="modal-footer">
       <button class="btn-ghost" onclick="copyApiKey()">📋 Copia</button>
       <button class="btn-ok" onclick="closeModal('modal-apikey')">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── /review wizard modal ───────────────────────────────────────── -->
+<div id="review-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center">
+  <div class="modal review-modal">
+    <h3>📄 Revisione proposta progetto</h3>
+    <p class="sub">Carica il tuo documento. Lo confronterò con tutti i progetti nel database — successi, fallimenti, prescrizioni ricevute — e ti dirò cosa cambiare prima di presentarlo.</p>
+
+    <div class="form-row">
+      <label>Documento da analizzare</label>
+      <div class="drop-zone" id="review-drop"
+           onclick="document.getElementById('review-file-input').click()"
+           ondragover="reviewDragOver(event)" ondragleave="reviewDragLeave(event)" ondrop="reviewDrop(event)">
+        <div class="drop-icon">📁</div>
+        <div id="review-drop-label">Trascina qui il PDF oppure clicca per selezionarlo</div>
+        <div style="font-size:11px;margin-top:4px;color:var(--text-dim)">Oppure incolla testo sotto</div>
+      </div>
+      <input type="file" id="review-file-input" accept=".pdf,.txt" style="display:none" onchange="reviewFileChosen(this)">
+    </div>
+
+    <div class="form-row">
+      <label>Oppure incolla il testo del documento</label>
+      <textarea id="review-paste-text" placeholder="Incolla qui il contenuto del documento…" style="width:100%;min-height:80px;padding:9px 11px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;outline:none;resize:vertical;font-size:12px;color:var(--text-main)"></textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-row" style="margin:0">
+        <label>Tipo di impianto</label>
+        <select id="review-type" style="width:100%;padding:9px 11px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;outline:none;color:var(--text-main)">
+          <option value="">— Non specificato —</option>
+          <option value="fotovoltaico">☀️ Fotovoltaico</option>
+          <option value="agrovoltaico">🌾 Agrovoltaico</option>
+          <option value="eolico">💨 Eolico</option>
+          <option value="idroelettrico">💧 Idroelettrico</option>
+          <option value="accumulo">🔋 Accumulo / BESS</option>
+        </select>
+      </div>
+      <div class="form-row" style="margin:0">
+        <label>Regione / Provincia</label>
+        <input type="text" id="review-region" placeholder="es. Sicilia, PA…" style="width:100%;padding:9px 11px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;outline:none;color:var(--text-main)">
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:10px">
+      <label>Preoccupazioni specifiche (opzionale)</label>
+      <textarea id="review-concerns" placeholder="Es: non siamo sicuri sulla VINCA, abbiamo vincoli paesaggistici, la potenza è vicina alla soglia VIA…" style="width:100%;min-height:55px;padding:9px 11px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;outline:none;resize:vertical;font-size:12px;color:var(--text-main)"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeReviewModal()">Annulla</button>
+      <button class="btn-ok" onclick="submitReview()">📄 Avvia revisione</button>
     </div>
   </div>
 </div>
@@ -1377,6 +1460,306 @@ function saveConversation(title, messages){
 
 // ── Chat ───────────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════
+// /review command — cross-project comparative proposal review
+// ═══════════════════════════════════════════════════════════════════════
+
+let _reviewFile       = null;   // File object from file picker / drop
+let _reviewContext    = '';     // Full synthesis prompt stored for follow-up
+let _reviewModel      = '';     // Model used, stored for follow-up
+
+// ── Input hint ────────────────────────────────────────────────────────
+function handleInputHint(el){
+  autoResize(el);
+  const val = el.value.trimStart();
+  const hp  = $('process-hint');
+  const hr  = $('review-hint');
+  if(hp) hp.classList.toggle('show', val === '/process' || val.startsWith('/process '));
+  if(hr) hr.classList.toggle('show', val === '/review'  || val.startsWith('/review '));
+}
+
+// ── Modal open / close ────────────────────────────────────────────────
+function openReviewModal(){
+  _reviewFile = null;
+  if($('review-file-input')) $('review-file-input').value = '';
+  if($('review-drop-label')) $('review-drop-label').textContent = 'Trascina qui il PDF oppure clicca per selezionarlo';
+  if($('review-drop'))       $('review-drop').classList.remove('drag-over');
+  if($('review-paste-text')) $('review-paste-text').value = '';
+  if($('review-concerns'))   $('review-concerns').value  = '';
+  if($('review-region'))     $('review-region').value    = '';
+  const overlay = $('review-overlay');
+  overlay.style.display = 'flex';
+}
+
+function closeReviewModal(){
+  $('review-overlay').style.display = 'none';
+}
+
+// ── Drag & drop ───────────────────────────────────────────────────────
+function reviewDragOver(e){
+  e.preventDefault();
+  $('review-drop')?.classList.add('drag-over');
+}
+function reviewDragLeave(e){
+  $('review-drop')?.classList.remove('drag-over');
+}
+function reviewDrop(e){
+  e.preventDefault();
+  $('review-drop')?.classList.remove('drag-over');
+  const f = e.dataTransfer?.files?.[0];
+  if(f) _setReviewFile(f);
+}
+function reviewFileChosen(input){
+  const f = input.files?.[0];
+  if(f) _setReviewFile(f);
+}
+function _setReviewFile(f){
+  _reviewFile = f;
+  const lbl = $('review-drop-label');
+  if(lbl) lbl.innerHTML = `<span class="file-chosen">✅ ${f.name} (${(f.size/1024).toFixed(0)} KB)</span>`;
+}
+
+// ── Submit ────────────────────────────────────────────────────────────
+async function submitReview(){
+  const pasteText  = $('review-paste-text')?.value.trim()  || '';
+  const projectType= $('review-type')?.value               || '';
+  const region     = $('review-region')?.value.trim()      || '';
+  const concerns   = $('review-concerns')?.value.trim()    || '';
+
+  if(!_reviewFile && !pasteText){
+    toast('Carica un PDF o incolla il testo del documento','err');
+    return;
+  }
+
+  closeReviewModal();
+  $('review-hint')?.classList.remove('show');
+  $('user-input').value = '';
+
+  const welcome = $('welcome-msg');
+  if(welcome) welcome.remove();
+
+  const label = '/review ' + (_reviewFile ? _reviewFile.name : 'testo incollato') +
+                (projectType ? ` — ${projectType}` : '') +
+                (region      ? `, ${region}`        : '');
+  appendMsg('user', label, []);
+
+  const typingId = 'typing-'+Date.now();
+  appendMsg('assistant','',[], typingId, true);
+  $('send-btn').style.display='none';
+  $('stop-btn').style.display='flex';
+  _streaming  = true;
+  _abortCtrl  = new AbortController();
+  _reviewModel= $('model-select')?.value || '';
+
+  // Progress stages
+  const stages = [
+    '📖 Lettura e comprensione del documento…',
+    '🔍 Ricerca pattern di fallimento nel database…',
+    '✅ Ricerca elementi dei progetti approvati…',
+    '📊 Confronto tra proposta e precedenti…',
+    '⚠️ Identificazione problemi critici…',
+    '📌 Elaborazione raccomandazioni…',
+    '🧠 Generazione rapporto comparativo…',
+  ];
+  let stageIdx = 0;
+  const stageBubble = document.getElementById(typingId);
+  if(stageBubble) stageBubble.innerHTML='<span style="color:var(--text-muted)">'+stages[0]+'</span>';
+  const stageTimer = setInterval(()=>{
+    stageIdx = Math.min(stageIdx+1, stages.length-1);
+    const b = document.getElementById(typingId);
+    if(b && !_reviewFullText) b.innerHTML='<span style="color:var(--text-muted)">'+stages[stageIdx]+'</span>';
+  }, 14000);
+
+  _reviewFullText = '';
+  let sources = [];
+
+  try{
+    // Build FormData
+    const fd = new FormData();
+    if(_reviewFile)  fd.append('file', _reviewFile);
+    if(pasteText)    fd.append('proposal_text', pasteText);
+    fd.append('project_type', projectType);
+    fd.append('region',       region);
+    fd.append('concerns',     concerns);
+    fd.append('model',        _reviewModel);
+    fd.append('top_k',        $('topk-select')?.value || '8');
+
+    const resp = await fetch('/v1/review', {
+      method: 'POST',
+      headers: {'Authorization':'Bearer '+_token},
+      body: fd,
+      signal: _abortCtrl.signal,
+    });
+
+    if(!resp.ok){
+      const d = await resp.json().catch(()=>({}));
+      throw new Error(d.detail || `HTTP ${resp.status}`);
+    }
+
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buf += decoder.decode(value, {stream:true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data:')) continue;
+        const raw = line.slice(5).trim();
+        if(raw==='[DONE]') break;
+        try{
+          const ev = JSON.parse(raw);
+          if(ev.token){
+            _reviewFullText += ev.token;
+            const b = document.getElementById(typingId);
+            if(b){ b.innerHTML=renderMarkdown(_reviewFullText); b.scrollIntoView({block:'nearest'}); }
+          }
+          if(ev.sources) sources = ev.sources;
+        }catch{}
+      }
+    }
+
+    // Store context for follow-up
+    _reviewContext = _reviewFullText;
+
+    // Attach sources
+    if(sources.length){
+      const b = document.getElementById(typingId);
+      if(b){
+        const col = b.closest('.msg-content') || b.parentElement;
+        col.querySelector('.src-section')?.remove();
+        col.appendChild(_buildSourcesSection(sources));
+      }
+    }
+
+    // Parse follow-up questions and render clickable buttons
+    _renderFollowUpButtons(typingId, _reviewFullText);
+
+    // Save conversation
+    if(_reviewFullText){
+      saveConversation('Revisione: '+(_reviewFile?.name||'proposta'), getMessages());
+    }
+
+  }catch(e){
+    const b = document.getElementById(typingId);
+    if(e.name==='AbortError'){
+      if(b) b.innerHTML = _reviewFullText
+        ? renderMarkdown(_reviewFullText)+'<br><span style="font-size:11px;color:var(--text-dim)">[interrotto]</span>'
+        : '<span style="color:var(--yellow)">⏱ Revisione interrotta.</span>';
+    } else {
+      if(b) b.innerHTML='<span style="color:var(--red)">Errore /review: '+escapeHtml(e.message)+'</span>';
+      toast('Errore /review: '+e.message,'err');
+    }
+  } finally {
+    clearInterval(stageTimer);
+    _streaming=false;
+    $('send-btn').style.display='flex';
+    $('stop-btn').style.display='none';
+    _reviewFile=null;
+  }
+}
+
+let _reviewFullText = '';
+
+// ── Follow-up question buttons ────────────────────────────────────────
+function _renderFollowUpButtons(typingId, fullText){
+  // Parse "## ❓ Domande di approfondimento" section
+  const match = fullText.match(/##\s*[❓🔍]\s*Domande di approfondimento[\s\S]*?(?=##|$)/i);
+  if(!match) return;
+  const section = match[0];
+  // Extract numbered questions: "1. ..." or "- ..."
+  const qRe = /(?:^|\n)\s*(?:\d+[.)\s]+|[-•]\s*)(.{15,200})/g;
+  const questions = [];
+  let m;
+  while((m = qRe.exec(section)) !== null && questions.length < 3){
+    questions.push(m[1].trim().replace(/\*\*/g,''));
+  }
+  if(!questions.length) return;
+
+  const b = document.getElementById(typingId);
+  if(!b) return;
+  const col = b.closest('.msg-content') || b.parentElement;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'followup-btns';
+  wrap.innerHTML = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">💬 Rispondi a una domanda per affinare le raccomandazioni:</div>';
+  questions.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'followup-btn';
+    btn.textContent = q;
+    btn.onclick = () => _sendFollowUp(q, wrap);
+    wrap.appendChild(btn);
+  });
+  col.appendChild(wrap);
+}
+
+async function _sendFollowUp(question, buttonWrap){
+  if(_streaming) return;
+  // Remove button group
+  if(buttonWrap) buttonWrap.remove();
+
+  appendMsg('user', question, []);
+  const typingId = 'typing-'+Date.now();
+  appendMsg('assistant','',[], typingId, true);
+  $('send-btn').style.display='none';
+  $('stop-btn').style.display='flex';
+  _streaming = true;
+  _abortCtrl  = new AbortController();
+
+  let fullText = '';
+  try{
+    const resp = await fetch('/v1/review/followup', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+_token},
+      body: JSON.stringify({
+        original_context: _reviewContext.slice(0,6000),
+        question:         question,
+        answer:           question,  // user answered by clicking it
+        model:            _reviewModel || $('model-select')?.value || '',
+      }),
+      signal: _abortCtrl.signal,
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+
+    const reader = resp.body.getReader();
+    const dec    = new TextDecoder();
+    let buf = '';
+    while(true){
+      const {done,value} = await reader.read();
+      if(done) break;
+      buf += dec.decode(value,{stream:true});
+      const lines = buf.split('\n'); buf = lines.pop();
+      for(const ln of lines){
+        if(!ln.startsWith('data:')) continue;
+        const raw = ln.slice(5).trim();
+        if(raw==='[DONE]') break;
+        try{
+          const ev = JSON.parse(raw);
+          if(ev.token){
+            fullText += ev.token;
+            const b = document.getElementById(typingId);
+            if(b){ b.innerHTML=renderMarkdown(fullText); b.scrollIntoView({block:'nearest'}); }
+          }
+        }catch{}
+      }
+    }
+  }catch(e){
+    const b=document.getElementById(typingId);
+    if(b) b.innerHTML='<span style="color:var(--red)">'+escapeHtml(e.message)+'</span>';
+  } finally {
+    _streaming=false;
+    $('send-btn').style.display='flex';
+    $('stop-btn').style.display='none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// End /review
+// ═══════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════
 // /process command — project lifecycle analysis wizard
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -1567,10 +1950,14 @@ function handleKey(e){
     e.preventDefault();
     const val = $('user-input').value.trimStart();
     if(val === '/process' || val.startsWith('/process ')){
-      // Extract optional project name after /process
       const rest = val.slice(8).trim();
       openProcessModal(rest || null);
       $('process-hint')?.classList.remove('show');
+      return;
+    }
+    if(val === '/review' || val.startsWith('/review ')){
+      openReviewModal();
+      $('review-hint')?.classList.remove('show');
       return;
     }
     sendMessage();
@@ -1620,6 +2007,12 @@ async function sendMessage(){
     input.value=''; autoResize(input);
     $('process-hint')?.classList.remove('show');
     openProcessModal(rest || null);
+    return;
+  }
+  if(q === '/review' || q.startsWith('/review ')){
+    input.value=''; autoResize(input);
+    $('review-hint')?.classList.remove('show');
+    openReviewModal();
     return;
   }
   input.value=''; autoResize(input);

@@ -39,7 +39,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, HTMLResponse
 from pydantic import BaseModel
@@ -886,6 +886,159 @@ def process_checklist(user: dict = Depends(require_user)):
     """Return the checklist categories used by the /process analysis."""
     from rag_system.analysis.lifecycle import CHECKLIST, REQUIRED_DOCS
     return {"checklist": CHECKLIST, "required_docs": REQUIRED_DOCS}
+
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /review — Cross-project comparative proposal review  (feature/process-command)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/v1/review")
+async def review_proposal(
+    file:         UploadFile         = File(None),
+    proposal_text: str               = Form(""),
+    project_type:  str               = Form(""),
+    region:        str               = Form(""),
+    concerns:      str               = Form(""),
+    model:         str               = Form(""),
+    top_k:         int               = Form(8),
+    user: dict = Depends(require_user),
+):
+    """
+    Upload a new proposal (PDF or text) and get a cross-project comparative review.
+
+    Accepts multipart/form-data:
+      - file         : optional PDF upload
+      - proposal_text: optional raw text (used if no file)
+      - project_type : fotovoltaico / agrovoltaico / eolico / etc.
+      - region       : region/province
+      - concerns     : user's specific worries
+      - model        : LLM model override
+      - top_k        : chunks per probe query (default 8)
+
+    Streams SSE tokens then __SOURCES__ sentinel.
+    """
+    from rag_system.analysis.review import analyse_proposal, stream_review, extract_text_from_pdf
+
+    # ── Extract text ──────────────────────────────────────────────────────────
+    text = proposal_text.strip()
+    filename = ""
+    if file and file.filename:
+        filename  = file.filename
+        raw_bytes = await file.read()
+        logger.info("/v1/review upload: file=%s size=%d bytes user=%s",
+                    filename, len(raw_bytes), user["username"])
+        if filename.lower().endswith(".pdf"):
+            text = extract_text_from_pdf(raw_bytes)
+        else:
+            try:
+                text = raw_bytes.decode("utf-8", errors="replace")
+            except Exception:
+                text = ""
+
+    if not text:
+        raise HTTPException(status_code=400,
+                            detail="Nessun testo estratto. Carica un PDF valido o incolla il testo.")
+
+    logger.info("/v1/review [%s]: type=%s region=%s text_len=%d",
+                user["username"], project_type, region, len(text))
+
+    def _generate():
+        QUERY_GATE.clear(); _watchdog_release_gate()
+        try:
+            analysis = analyse_proposal(
+                proposal_text = text,
+                project_type  = project_type,
+                region        = region,
+                concerns      = concerns,
+                model         = model or config.LLM_MODEL,
+                top_k         = top_k,
+            )
+            import json as _json
+            for token in stream_review(analysis):
+                if token.startswith("\n\n__SOURCES__:"):
+                    payload = token.replace("\n\n__SOURCES__:", "")
+                    try:
+                        sources = _json.loads(payload)
+                        yield f"data: {_json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
+                    except Exception:
+                        pass
+                    continue
+                yield f"data: {_json.dumps({'token': token}, ensure_ascii=False)}\n\n"
+            yield "data: [DONE]\n\n"
+        except Exception as exc:
+            logger.error("/v1/review failed: %s", exc)
+            import json as _json
+            yield f"data: {_json.dumps({'token': f'[Errore analisi: {exc}]'})}\n\n"
+            yield "data: [DONE]\n\n"
+        finally:
+            QUERY_GATE.set()
+
+    return StreamingResponse(_generate(), media_type="text/event-stream")
+
+
+@app.post("/v1/review/followup")
+async def review_followup(
+    req: dict,
+    user: dict = Depends(require_user),
+):
+    """
+    Continue a review session with a follow-up answer.
+    Body: {original_context: str, question: str, answer: str, model: str}
+    Streams SSE tokens.
+    """
+    import json as _json
+    import httpx as _hx
+
+    original = req.get("original_context", "")
+    question = req.get("question", "")
+    answer   = req.get("answer", "")
+    model    = req.get("model", "") or config.LLM_MODEL
+
+    if not answer:
+        raise HTTPException(status_code=400, detail="answer is required")
+
+    followup_prompt = (
+        f"{original}\n\n"
+        f"---\nDOMANDA DI APPROFONDIMENTO: {question}\n"
+        f"RISPOSTA DEL PROPONENTE: {answer}\n\n"
+        "Aggiorna le raccomandazioni tenendo conto di questa nuova informazione. "
+        "Sii conciso e focalizzato sulla nuova informazione fornita. "
+        "Se necessario, rivedi le priorità delle raccomandazioni."
+    )
+
+    def _generate():
+        QUERY_GATE.clear(); _watchdog_release_gate()
+        try:
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": "Sei un consulente senior in autorizzazioni rinnovabili. Rispondi in italiano, sii conciso e specifico."},
+                    {"role": "user",   "content": followup_prompt},
+                ],
+                "stream": True,
+                "options": {"temperature": 0.2, "num_predict": 2000, "num_ctx": config.LLM_CONTEXT_SIZE},
+            }
+            with _hx.Client(timeout=300.0) as client:
+                with client.stream("POST", f"{config.OLLAMA_BASE_URL}/api/chat", json=payload) as resp:
+                    resp.raise_for_status()
+                    for line in resp.iter_lines():
+                        if not line:
+                            continue
+                        try:
+                            data  = _json.loads(line)
+                            token = data.get("message", {}).get("content", "")
+                            if token:
+                                yield f"data: {_json.dumps({'token': token}, ensure_ascii=False)}\n\n"
+                            if data.get("done"):
+                                break
+                        except _json.JSONDecodeError:
+                            continue
+            yield "data: [DONE]\n\n"
+        finally:
+            QUERY_GATE.set()
+
+    return StreamingResponse(_generate(), media_type="text/event-stream")
 
 @app.get("/health")
 def health():
