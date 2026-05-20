@@ -410,6 +410,37 @@ a{color:inherit;text-decoration:none}
   display:flex;align-items:center;gap:8px;
 }
 .toast.ok{background:#1a3a1a;border:1px solid var(--green);color:var(--green)}
+/* ── /process wizard ──────────────────────────────────────────────────── */
+.process-modal{width:520px;max-width:95vw}
+.process-modal h3{font-size:17px;margin-bottom:6px}
+.process-modal .sub{font-size:12px;color:var(--text-muted);margin-bottom:20px}
+.process-modal .form-row textarea{
+  width:100%;padding:9px 11px;background:var(--bg-card);border:1px solid var(--border);
+  border-radius:6px;outline:none;resize:vertical;min-height:60px;font-size:13px;
+  color:var(--text-main);transition:border-color .15s;
+}
+.process-modal .form-row textarea:focus{border-color:var(--accent)}
+.phase-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.phase-btn{
+  padding:7px 10px;border:1px solid var(--border);border-radius:6px;
+  font-size:11px;cursor:pointer;text-align:center;transition:all .15s;
+  color:var(--text-muted);background:var(--bg-card);
+}
+.phase-btn.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600}
+.process-report .section-badge{
+  display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-left:6px;
+}
+.badge-ok{background:#1a3a1a;color:#4caf50}
+.badge-warn{background:#3a2a00;color:#ffb300}
+.badge-err{background:#3a1a1a;color:#f44336}
+.hint-process{
+  display:none;position:absolute;bottom:calc(100% + 8px);left:0;right:0;
+  background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;
+  padding:10px 14px;font-size:12px;color:var(--text-muted);z-index:50;
+  box-shadow:0 4px 16px rgba(0,0,0,.3);
+}
+.hint-process.show{display:block}
+.hint-process strong{color:var(--accent)}
 .toast.err{background:#3a1a1a;border:1px solid var(--red);color:var(--red)}
 .toast.info{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent)}
 @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
@@ -606,12 +637,18 @@ a{color:inherit;text-decoration:none}
           <button class="starter-btn" onclick="sendStarter('Quali sono i requisiti tecnici principali?')">Requisiti tecnici</button>
           <button class="starter-btn" onclick="sendStarter('Quali sono le date e le scadenze importanti?')">Date e scadenze</button>
           <button class="starter-btn" onclick="sendStarter('Riassumi i documenti disponibili')">Riassunto documenti</button>
+          <button class="starter-btn" onclick="openProcessModal(null)" style="background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:600">🔍 /process — Analisi progetto</button>
         </div>
       </div>
     </div>
     <div id="input-wrap">
       <div class="input-row">
-        <textarea id="user-input" rows="1" placeholder="Scrivi una domanda…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <div style="position:relative;flex:1;display:flex;flex-direction:column">
+  <div class="hint-process" id="process-hint">
+    Premi <strong>Enter</strong> per aprire il wizard di analisi progetto — ti farò alcune domande poi genererò un rapporto critico completo.
+  </div>
+  <textarea id="user-input" rows="1" placeholder="Scrivi una domanda… (digita /process per analisi progetto)" onkeydown="handleKey(event)" oninput="handleInputHint(this);autoResize(this)"></textarea>
+</div>
         <button class="send-btn" id="send-btn" onclick="sendMessage()" title="Invia (Enter)">➤</button>
         <button class="send-btn" id="stop-btn" onclick="stopStream()" title="Interrompi" style="display:none;background:#c0392b">■</button>
       </div>
@@ -798,6 +835,55 @@ a{color:inherit;text-decoration:none}
     <div class="modal-footer">
       <button class="btn-ghost" onclick="copyApiKey()">📋 Copia</button>
       <button class="btn-ok" onclick="closeModal('modal-apikey')">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── /process wizard modal ──────────────────────────────────────── -->
+<div id="process-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:none;align-items:center;justify-content:center">
+  <div class="modal process-modal">
+    <h3>🔍 Analisi ciclo di vita progetto</h3>
+    <p class="sub">Risponderò con un rapporto critico: documentazione presente/mancante, problemi, rischi e raccomandazioni prioritarie.</p>
+
+    <div class="form-row">
+      <label>Progetto da analizzare</label>
+      <select id="process-project-sel" style="width:100%;padding:9px 11px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;outline:none;color:var(--text-main)"></select>
+    </div>
+
+    <div class="form-row">
+      <label>Fase attuale del progetto</label>
+      <div class="phase-grid" id="process-phase-grid">
+        <button class="phase-btn" onclick="selectPhase(this,'Pre-screening VIA')">⏳ Pre-screening VIA</button>
+        <button class="phase-btn" onclick="selectPhase(this,'VIA in istruttoria')">📋 VIA in istruttoria</button>
+        <button class="phase-btn" onclick="selectPhase(this,'VIA approvata, in attesa AU')">✅ VIA approvata</button>
+        <button class="phase-btn" onclick="selectPhase(this,'Autorizzazione Unica rilasciata')">🟢 AU rilasciata</button>
+        <button class="phase-btn" onclick="selectPhase(this,'In costruzione')">🏗️ In costruzione</button>
+        <button class="phase-btn" onclick="selectPhase(this,'Non specificata')">❓ Non specificata</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>Preoccupazione principale</label>
+      <select id="process-concern" style="width:100%;padding:9px 11px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;outline:none;color:var(--text-main)">
+        <option value="">— Seleziona —</option>
+        <option value="Completezza documentazione">📁 Completezza documentazione</option>
+        <option value="Conformità tecnica ai requisiti">⚙️ Conformità tecnica ai requisiti</option>
+        <option value="Prescrizioni e condizioni autorizzative">📌 Prescrizioni e condizioni</option>
+        <option value="Tempi e scadenze procedurali">⏱️ Tempi e scadenze</option>
+        <option value="Impatto ambientale e Natura 2000">🌿 Impatto ambientale / VINCA</option>
+        <option value="Connessione alla rete elettrica">⚡ Connessione alla rete</option>
+        <option value="Analisi completa del progetto">🔎 Analisi completa</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label>Problemi già noti (opzionale)</label>
+      <textarea id="process-issues" placeholder="Es: mancano pareri da Soprintendenza, il SIA non è aggiornato dopo la variante di layout…"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeProcessModal()">Annulla</button>
+      <button class="btn-ok" onclick="submitProcess()">🔍 Avvia analisi</button>
     </div>
   </div>
 </div>
@@ -1290,8 +1376,205 @@ function saveConversation(title, messages){
 }
 
 // ── Chat ───────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// /process command — project lifecycle analysis wizard
+// ═══════════════════════════════════════════════════════════════════════
+
+let _processPhase = 'Non specificata';
+
+function handleInputHint(el){
+  autoResize(el);
+  const val = el.value.trimStart();
+  const hint = $('process-hint');
+  if(!hint) return;
+  if(val === '/process' || val.startsWith('/process ')){
+    hint.classList.add('show');
+  } else {
+    hint.classList.remove('show');
+  }
+}
+
+function selectPhase(btn, phase){
+  _processPhase = phase;
+  document.querySelectorAll('#process-phase-grid .phase-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function openProcessModal(prefillProject){
+  // Populate project dropdown
+  const sel = $('process-project-sel');
+  sel.innerHTML = '';
+  (_projects||[]).forEach(p => {
+    const o = document.createElement('option');
+    o.value = p; o.textContent = p;
+    if(p === prefillProject || p === _currentProject) o.selected = true;
+    sel.appendChild(o);
+  });
+  // Reset phase
+  _processPhase = 'Non specificata';
+  document.querySelectorAll('#process-phase-grid .phase-btn').forEach(b => b.classList.remove('selected'));
+  const notSpec = document.querySelector('#process-phase-grid .phase-btn:last-child');
+  if(notSpec) notSpec.classList.add('selected');
+  // Show
+  const overlay = $('process-overlay');
+  overlay.style.display = 'flex';
+}
+
+function closeProcessModal(){
+  const overlay = $('process-overlay');
+  overlay.style.display = 'none';
+}
+
+async function submitProcess(){
+  const projectId = $('process-project-sel')?.value;
+  const concern   = $('process-concern')?.value  || '';
+  const issues    = $('process-issues')?.value   || '';
+
+  if(!projectId){ toast('Seleziona un progetto','err'); return; }
+
+  closeProcessModal();
+  const hint = $('process-hint');
+  if(hint) hint.classList.remove('show');
+  $('user-input').value = '';
+
+  // Show the user "command" as a chat bubble
+  const welcome = $('welcome-msg');
+  if(welcome) welcome.remove();
+
+  const label = `/process ${projectId}` + (concern ? ` — ${concern}` : '');
+  appendMsg('user', label, []);
+
+  const typingId = 'typing-'+Date.now();
+  appendMsg('assistant','',[], typingId, true);
+  $('send-btn').style.display='none';
+  $('stop-btn').style.display='flex';
+  _streaming = true;
+  _abortCtrl  = new AbortController();
+
+  let fullText = '';
+  let sources  = [];
+  let elapsedSec = 0;
+  const elapsedTimer = setInterval(()=>{ elapsedSec++; }, 1000);
+
+  // Update bubble with progress stages while waiting
+  const stages = [
+    '🔍 Ricerca documenti di identità del progetto…',
+    '📋 Analisi procedura autorizzativa…',
+    '🌿 Verifica Studio d'Impatto Ambientale…',
+    '⚡ Analisi connessione rete…',
+    '📁 Inventario documentale completo…',
+    '⚖️ Verifica prescrizioni e condizioni…',
+    '🔄 Analisi varianti e aggiornamenti…',
+    '⏱️ Verifica cronoprogramma…',
+    '🧠 Sintesi e generazione rapporto…',
+  ];
+  let stageIdx = 0;
+  const stageBubble = document.getElementById(typingId);
+  if(stageBubble) stageBubble.innerHTML = '<span style="color:var(--text-muted)">'+stages[0]+'</span>';
+  const stageTimer = setInterval(()=>{
+    stageIdx = Math.min(stageIdx+1, stages.length-1);
+    const b = document.getElementById(typingId);
+    if(b && !fullText) b.innerHTML = '<span style="color:var(--text-muted)">'+stages[stageIdx]+'</span>';
+  }, 12000);
+
+  try{
+    const resp = await fetch('/v1/process', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+_token},
+      body: JSON.stringify({
+        project_id:    projectId,
+        current_phase: _processPhase,
+        main_concern:  concern,
+        known_issues:  issues,
+        model:         $('model-select')?.value || '',
+        top_k:         parseInt($('topk-select')?.value||'8'),
+      }),
+      signal: _abortCtrl.signal,
+    });
+
+    if(!resp.ok){
+      const d = await resp.json().catch(()=>({}));
+      throw new Error(d.detail || `HTTP ${resp.status}`);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      buf += decoder.decode(value, {stream:true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data:')) continue;
+        const raw = line.slice(5).trim();
+        if(raw==='[DONE]') break;
+        try{
+          const ev = JSON.parse(raw);
+          if(ev.token){
+            fullText += ev.token;
+            const b = document.getElementById(typingId);
+            if(b){ b.innerHTML = renderMarkdown(fullText); b.scrollIntoView({block:'nearest'}); }
+          }
+          if(ev.sources) sources = ev.sources;
+        }catch{}
+      }
+    }
+
+    // Attach sources
+    if(sources.length){
+      const b = document.getElementById(typingId);
+      if(b){
+        const col = b.closest('.msg-content') || b.parentElement;
+        col.querySelector('.src-section')?.remove();
+        col.appendChild(_buildSourcesSection(sources));
+      }
+    }
+
+    // Save to conversation
+    if(fullText){
+      const allMsgs = getMessages();
+      saveConversation('Analisi: '+projectId, [...allMsgs]);
+    }
+
+  }catch(e){
+    const b = document.getElementById(typingId);
+    if(e.name==='AbortError'){
+      if(b) b.innerHTML = fullText
+        ? renderMarkdown(fullText)+'<br><span style="font-size:11px;color:var(--text-dim)">[interrotto]</span>'
+        : '<span style="color:var(--yellow)">⏱ Analisi interrotta.</span>';
+    } else {
+      if(b) b.innerHTML = '<span style="color:var(--red)">Errore analisi: '+escapeHtml(e.message)+'</span>';
+      toast('Errore /process: '+e.message,'err');
+    }
+  } finally {
+    clearInterval(elapsedTimer);
+    clearInterval(stageTimer);
+    _streaming = false;
+    $('send-btn').style.display='flex';
+    $('stop-btn').style.display='none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// End /process
+// ═══════════════════════════════════════════════════════════════════════
+
 function handleKey(e){
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); sendMessage();}
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    const val = $('user-input').value.trimStart();
+    if(val === '/process' || val.startsWith('/process ')){
+      // Extract optional project name after /process
+      const rest = val.slice(8).trim();
+      openProcessModal(rest || null);
+      $('process-hint')?.classList.remove('show');
+      return;
+    }
+    sendMessage();
+  }
 }
 
 function sendStarter(q){
@@ -1331,6 +1614,14 @@ async function sendMessage(){
   const input=$('user-input');
   const q=input.value.trim();
   if(!q) return;
+  // Intercept /process command
+  if(q === '/process' || q.startsWith('/process ')){
+    const rest = q.slice(8).trim();
+    input.value=''; autoResize(input);
+    $('process-hint')?.classList.remove('show');
+    openProcessModal(rest || null);
+    return;
+  }
   input.value=''; autoResize(input);
 
   const welcome=$('welcome-msg');

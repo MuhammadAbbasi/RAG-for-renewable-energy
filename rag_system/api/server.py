@@ -813,6 +813,80 @@ async def wiki_reindex(
 # Core API endpoints
 # ─────────────────────────────────────────────────────────────────────────────
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /process — Project lifecycle analysis  (feature/process-command)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ProcessRequest(BaseModel):
+    project_id:    str
+    current_phase: str            = "Non specificata"
+    main_concern:  str            = ""
+    known_issues:  str            = ""
+    model:         Optional[str]  = None
+    top_k:         Optional[int]  = 8
+
+
+@app.post("/v1/process")
+async def process_project(
+    req: ProcessRequest,
+    user: dict = Depends(require_user),
+):
+    """
+    Run a full permit-lifecycle analysis on one project.
+
+    Streams the LLM narrative as SSE tokens, then emits a __SOURCES__ sentinel.
+    Uses multiple targeted RAG queries (one per checklist category) then
+    synthesises a consultant-grade report via the LLM.
+    """
+    from rag_system.analysis.lifecycle import analyse_project, stream_analysis
+
+    if not req.project_id:
+        raise HTTPException(status_code=400, detail="project_id is required")
+
+    model = req.model or config.LLM_MODEL
+    logger.info(
+        "/v1/process [%s] project=%s phase=%s",
+        user["username"], req.project_id, req.current_phase,
+    )
+
+    def _generate():
+        QUERY_GATE.clear(); _watchdog_release_gate()
+        try:
+            analysis = analyse_project(
+                project_id     = req.project_id,
+                current_phase  = req.current_phase,
+                main_concern   = req.main_concern,
+                known_issues   = req.known_issues,
+                model          = model,
+                top_k_per_query= req.top_k or 8,
+            )
+            for token in stream_analysis(analysis):
+                if token.startswith("\n\n__SOURCES__:"):
+                    payload = token.replace("\n\n__SOURCES__:", "")
+                    try:
+                        import json as _json
+                        sources = _json.loads(payload)
+                        yield f"data: {_json.dumps({'sources': sources}, ensure_ascii=False)}\n\n"
+                    except Exception:
+                        pass
+                    continue
+                import json as _json
+                yield f"data: {_json.dumps({'token': token}, ensure_ascii=False)}\n\n"
+            yield "data: [DONE]\n\n"
+        finally:
+            QUERY_GATE.set()
+
+    return StreamingResponse(_generate(), media_type="text/event-stream")
+
+
+@app.get("/v1/process/checklist")
+def process_checklist(user: dict = Depends(require_user)):
+    """Return the checklist categories used by the /process analysis."""
+    from rag_system.analysis.lifecycle import CHECKLIST, REQUIRED_DOCS
+    return {"checklist": CHECKLIST, "required_docs": REQUIRED_DOCS}
+
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "a176lab-rag"}
