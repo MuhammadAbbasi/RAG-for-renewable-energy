@@ -276,22 +276,22 @@ data/
     ┌─────────────────────────────────────┐
     │           pipeline.py               │
     │  1. MD5 hash check (skip unchanged) │
-    │  2. pdfplumber pre-validation        │
-    │  3. PDF parse - PyMuPDF              │
-    │  4. OCR scanned pages - EasyOCR GPU  │
-    │  5. Table extraction - pdfplumber    │
-    │  6. Image captioning - qwen2.5vl     │
-    │  7. Semantic chunking (1000 / 150)   │
-    │  8. Batch embed - bge-m3 (1024-dim)  │
-    │  9. Upsert → Qdrant                  │
-    │ 10. Mark indexed in tracker.db       │
+    │  2. pdfplumber pre-validation       │
+    │  3. PDF parse - PyMuPDF             │
+    │  4. OCR scanned pages - EasyOCR GPU │
+    │  5. Table extraction - pdfplumber   │
+    │  6. Image captioning - qwen2.5vl    │
+    │  7. Semantic chunking (1000 / 150)  │
+    │  8. Batch embed - bge-m3 (1024-dim) │
+    │  9. Upsert → Qdrant                 │
+    │ 10. Mark indexed in tracker.db      │
     └─────────────────────────────────────┘
          │
          ▼
     ┌─────────────────────────────────────┐
-    │   Qdrant (Cosine, 1024-dim)          │
-    │   One collection per project         │
-    │   rag_project_<sanitized_name>       │
+    │   Qdrant (Cosine, 1024-dim)         │
+    │   One collection per project        │
+    │   rag_project_<sanitized_name>      │
     └─────────────────────────────────────┘
          │
          ▼  POST /query  or  /v1/chat/completions

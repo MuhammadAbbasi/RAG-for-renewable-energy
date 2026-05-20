@@ -34,7 +34,7 @@ _EMBED_URL_BATCH  = f"{config.OLLAMA_BASE_URL}/api/embed"      # Ollama ≥ 0.1.
 _EMBED_URL_SINGLE = f"{config.OLLAMA_BASE_URL}/api/embeddings"  # legacy, per-text
 
 # How many texts to include in one batch request (keep reasonable for RAM)
-_BATCH_SIZE = 64
+_BATCH_SIZE = 12  # small batches so QUERY_GATE can pause indexing quickly when a chat query arrives
 
 # Retry settings for transient Ollama errors (500 / model-swap VRAM pressure)
 _MAX_RETRIES    = 8

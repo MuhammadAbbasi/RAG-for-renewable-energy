@@ -1336,7 +1336,25 @@ async function sendMessage(){
   const welcome=$('welcome-msg');
   if(welcome) welcome.remove();
 
-  appendMsg('user', q, []);
+  // Check if indexing is running and warn user
+  try{
+    const sr=await fetch('/v1/index/status',{headers:{Authorization:'Bearer '+_token}});
+    if(sr.ok){
+      const sd=await sr.json();
+      if(sd.status==='running'){
+        appendMsg('user', q, []);
+        const warnId='warn-'+Date.now();
+        appendMsg('assistant',
+          '⚠️ **Indicizzazione in corso** — il modello potrebbe impiegare più tempo del solito. '+
+          'La risposta arriverà appena Ollama sarà libero (attesa stimata: 1-3 min).',
+          [], warnId, false);
+      } else {
+        appendMsg('user', q, []);
+      }
+    } else {
+      appendMsg('user', q, []);
+    }
+  }catch(e){ appendMsg('user', q, []); }
 
   const model=$('model-select').value;
   const msgs=getMessages();

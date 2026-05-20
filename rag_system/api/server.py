@@ -119,6 +119,21 @@ async def startup_event():
     authlib.init_auth_db()
     logger.info("Auth DB initialised - default admin: admin / admin123")
     logger.info("Query analytics log: %s", _QUERY_LOG)
+    # Check if Ollama supports parallel model loading (needed to serve LLM
+    # queries while embedding batches are running concurrently).
+    try:
+        import httpx as _hx
+        ps = _hx.get(f"{config.OLLAMA_BASE_URL}/api/ps", timeout=5).json()
+        loaded = len(ps.get("models", []))
+        logger.info("Ollama loaded models at startup: %d", loaded)
+        if loaded == 0:
+            logger.warning(
+                "Ollama has no models loaded yet. "
+                "If queries time out during indexing, set OLLAMA_NUM_PARALLEL=2 and "
+                "OLLAMA_MAX_LOADED_MODELS=2 in the HOST environment where Ollama runs."
+            )
+    except Exception:
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
