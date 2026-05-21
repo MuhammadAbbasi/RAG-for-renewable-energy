@@ -33,7 +33,9 @@ venv.bak/
 # IDE
 .vscode/
 .idea/
-.github/
+
+# Claude Code project settings (machine-specific)
+.claude/
 *.swp
 *.swo
 *~
