@@ -84,7 +84,8 @@ a{color:inherit;text-decoration:none}
 }
 .btn-primary:hover{opacity:.85}
 .btn-primary:disabled{opacity:.5;cursor:not-allowed}
-#login-error{color:var(--red);font-size:12px;margin-top:10px;min-height:16px;text-align:center}
+#login-error{color:#fff;background:#b00020;font-size:14px;font-weight:600;margin-top:12px;min-height:0;padding:10px 14px;border-radius:6px;text-align:center;display:none}
+#login-error:not(:empty){display:block}
 
 /* ── Top Bar ───────────────────────────────────────────────────────────── */
 #topbar{
@@ -976,23 +977,48 @@ a{color:inherit;text-decoration:none}
 
 <script>
 // Apply theme immediately to prevent flash
-const _savedTheme = localStorage.getItem('rag_theme') || 'light';
+const _savedTheme = (()=>{ try{ return localStorage.getItem('rag_theme') || 'light'; }catch{ return 'light'; } })();
 if(_savedTheme === 'dark'){
   document.documentElement.setAttribute('data-theme', 'dark');
 }
 </script>
 
 <script>
+// Global JS error trap — shows crashes on-screen so they're visible without DevTools
+window.onerror = function(msg, src, line, col, err){
+  const box = document.getElementById('login-screen') || document.body;
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#b00020;color:#fff;font-size:12px;padding:8px 12px;z-index:9999;white-space:pre-wrap;font-family:monospace';
+  div.textContent = 'JS ERROR: ' + msg + '\n' + src + ':' + line + ':' + col;
+  document.body.appendChild(div);
+  return false;
+};
+window.addEventListener('unhandledrejection', e => {
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#b00020;color:#fff;font-size:12px;padding:8px 12px;z-index:9999;white-space:pre-wrap;font-family:monospace';
+  div.textContent = 'PROMISE ERROR: ' + (e.reason?.message || e.reason);
+  document.body.appendChild(div);
+});
+
+// ── Storage helpers (localStorage may be blocked in some browsers) ──────────
+const _storage = {
+  get(k, fallback=''){
+    try{ return localStorage.getItem(k) ?? fallback; }catch{ return fallback; }
+  },
+  set(k, v){ try{ localStorage.setItem(k, v); }catch{} },
+  remove(k){ try{ localStorage.removeItem(k); }catch{} },
+};
+
 // ── State ──────────────────────────────────────────────────────────────────
-let _token      = localStorage.getItem('rag_token') || '';
+let _token      = _storage.get('rag_token');
 let _session    = null;
 let _streaming  = false;
 let _abortCtrl  = null;   // AbortController for current stream
 let _selectedProj = null;
-let _conversations = JSON.parse(localStorage.getItem('rag_convs') || '[]');
+let _conversations = JSON.parse(_storage.get('rag_convs', '[]'));
 let _currentConv  = null;
 let _adminOpen    = false;
-let _theme      = localStorage.getItem('rag_theme') || 'light';
+let _theme      = _storage.get('rag_theme', 'light');
 
 // ── Utils ──────────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -1156,7 +1182,7 @@ async function doLogin(){
     if(!r.ok){$('login-error').textContent=d.detail||'Credenziali non valide'; return;}
     _token = d.token;
     _session = d;
-    localStorage.setItem('rag_token', _token);
+    _storage.set('rag_token', _token);
     showApp();
   }catch(e){
     $('login-error').textContent='Errore di rete: '+e.message;
@@ -1169,7 +1195,7 @@ async function checkSession(){
   if(!_token) return false;
   try{
     const r = await fetch('/auth/me',{headers:{Authorization:'Bearer '+_token}});
-    if(!r.ok){_token='';localStorage.removeItem('rag_token');return false;}
+    if(!r.ok){_token='';_storage.remove('rag_token');return false;}
     _session = await r.json();
     return true;
   }catch{return false;}
@@ -1178,7 +1204,7 @@ async function checkSession(){
 function doLogout(){
   fetch('/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+_token}}).catch(()=>{});
   _token=''; _session=null;
-  localStorage.removeItem('rag_token');
+  _storage.remove('rag_token');
   location.reload();
 }
 
@@ -1241,7 +1267,7 @@ function toggleRightPanel(){
 
 function toggleTheme(){
   _theme = _theme === 'light' ? 'dark' : 'light';
-  localStorage.setItem('rag_theme', _theme);
+  _storage.set('rag_theme', _theme);
   if(_theme === 'dark'){
     document.documentElement.setAttribute('data-theme', 'dark');
     $('theme-toggle-btn').textContent = '☀ Tema';
@@ -1454,7 +1480,7 @@ function saveConversation(title, messages){
   }
   // Keep last 50
   if(_conversations.length>50) _conversations=_conversations.slice(-50);
-  localStorage.setItem('rag_convs', JSON.stringify(_conversations));
+  _storage.set('rag_convs', JSON.stringify(_conversations));
   loadConversations();
 }
 
@@ -1843,7 +1869,7 @@ async function submitProcess(){
   const stages = [
     '🔍 Ricerca documenti di identità del progetto…',
     '📋 Analisi procedura autorizzativa…',
-    '🌿 Verifica Studio d'Impatto Ambientale…',
+    "🌿 Verifica Studio d'Impatto Ambientale…",
     '⚡ Analisi connessione rete…',
     '📁 Inventario documentale completo…',
     '⚖️ Verifica prescrizioni e condizioni…',
