@@ -1301,6 +1301,8 @@ function switchTab(name){
 }
 
 // ── Projects ───────────────────────────────────────────────────────────────
+let _projects = [];   // global project list for /process and /review wizards
+
 async function loadProjects(){
   try{
     const r = await fetch('/v1/stats',{headers:{Authorization:'Bearer '+_token}});
@@ -1308,6 +1310,9 @@ async function loadProjects(){
     const d = await r.json();
     const list = $('project-list');
     list.innerHTML = '';
+
+    // Store project names globally for wizards
+    _projects = (d.projects||[]).map(p => p.name||p);
 
     // "All projects" option
     const all = document.createElement('div');
@@ -2691,40 +2696,4 @@ async function reindexProject(e, projectId){
     }
     toast(`▶ Indicizzazione avviata: "${projectId}"`,'ok');
     btn.textContent='⏳ In corso…';
-    // Poll status and refresh log when done
-    const poll=setInterval(async()=>{
-      try{
-        const sr=await fetch('/v1/index/status',{headers:{Authorization:'Bearer '+_token}});
-        if(!sr.ok) return;
-        const sd=await sr.json();
-        if(sd.status!=='running'){
-          clearInterval(poll);
-          btn.disabled=false; btn.textContent='↻ Reindicizza';
-          toast('✓ Indicizzazione completata','ok');
-          await loadLog();
-        }
-      }catch(_){}
-    },4000);
-  }catch(err){
-    toast('Errore: '+err.message,'err');
-    btn.disabled=false; btn.textContent='↻ Reindicizza';
-  }
-}
-
-// ── Modals ─────────────────────────────────────────────────────────────────
-function openModal(id){ $(id)?.classList.remove('hidden'); }
-function closeModal(id){ $(id)?.classList.add('hidden'); }
-
-// ── Toast ──────────────────────────────────────────────────────────────────
-function toast(msg, type='ok'){
-  const t=document.createElement('div');
-  t.className='toast '+(type==='err'?'err':type==='warn'?'warn':'info');
-  t.textContent=msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(),3500);
-}
-
-init();
-</script>
-</body>
-</html>
+    // Poll status and refresh log whe
