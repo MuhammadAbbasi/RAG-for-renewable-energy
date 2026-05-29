@@ -571,15 +571,8 @@ We welcome contributions! Here's how to get started.
 
 ---
 
-## License
-
-MIT — see [LICENSE](LICENSE) for full terms.
-
----
-
 ## Support
 
-For questions, issues, or feedback:
-- **Email**: info@a176lab.it
+For questions, issues, or feedback, please use:
 - **Issues**: [GitHub Issues](https://github.com/MuhammadAbbasi/RAG-for-renewable-energy/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/MuhammadAbbasi/RAG-for-renewable-energy/discussions)

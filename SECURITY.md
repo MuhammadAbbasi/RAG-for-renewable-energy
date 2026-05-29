@@ -9,9 +9,7 @@
 
 ## Reporting a vulnerability
 
-**Please do not report security vulnerabilities through public GitHub issues.**
-
-Send a description of the vulnerability to **info@a176lab.it** with:
+Please report security vulnerabilities using GitHub's private vulnerability reporting feature. Under the **Security** tab of the repository, select **Advisories** and click **Report a vulnerability** to submit:
 
 - A description of the vulnerability and its potential impact
 - Steps to reproduce the issue

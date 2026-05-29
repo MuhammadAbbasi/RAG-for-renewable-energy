@@ -1821,7 +1821,7 @@ function openProcessModal(prefillProject){
   (_projects||[]).forEach(p => {
     const o = document.createElement('option');
     o.value = p; o.textContent = p;
-    if(p === prefillProject || p === _currentProject) o.selected = true;
+    if(p === prefillProject || p === _selectedProj) o.selected = true;
     sel.appendChild(o);
   });
   // Reset phase

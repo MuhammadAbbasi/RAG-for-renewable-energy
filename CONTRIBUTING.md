@@ -56,6 +56,3 @@ Use the **Bug report** issue template. Include:
 
 Use the **Feature request** issue template. Describe the use case before the solution.
 
-## Contact
-
-For questions not suited to a GitHub issue: **info@a176lab.it**
